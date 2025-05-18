@@ -8,7 +8,7 @@ import type { KYC, KycPersonalInfo, KycProfessionalInfo, KycBankInfo, KycDocumen
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, AlertTriangle, User, Briefcase, Banknote, FileArchive, CheckCircle, XCircle, Edit3 } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertTriangle, User, Briefcase, Banknote, FileArchive, CheckCircle, XCircle, Edit3, HelpCircle, Fingerprint } from 'lucide-react';
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -22,13 +22,13 @@ const SectionTitle = ({ title, icon: Icon }: { title: string; icon: React.Elemen
   </div>
 );
 
-const InfoItem = ({ label, value }: { label: string; value?: string | null | boolean | Date }) => (
+const InfoItem = ({ label, value, capitalize = false }: { label: string; value?: string | null | boolean | Date; capitalize?: boolean }) => (
   <div className="grid grid-cols-3 gap-2 py-1.5">
     <span className="text-sm text-muted-foreground col-span-1">{label}:</span>
     <span className="font-medium col-span-2 break-words">
       {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : 
        value instanceof Date ? format(value, "PPP") : 
-       (value || 'N/A')}
+       (value ? (capitalize ? (value.charAt(0).toUpperCase() + value.slice(1)) : value) : 'N/A')}
     </span>
   </div>
 );
@@ -46,7 +46,7 @@ const ImageViewer = ({ url, label }: {url?: string | null, label: string}) => {
                     height={200} 
                     className="rounded-md object-cover border shadow-sm group-hover:opacity-80 transition-opacity"
                     data-ai-hint="document identification"
-                    onError={(e) => (e.currentTarget.src = 'https://placehold.co/300x200.png?text=Preview+Error')}
+                    onError={(e) => (e.currentTarget.src = 'https://placehold.co/300x200.png?text=Image+Unavailable')}
                 />
                 <span className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity text-white text-sm rounded-md">View Full Image</span>
             </a>
@@ -116,6 +116,40 @@ export default function KycDetailPage() {
   const bankInfo = kyc.bank_info || {} as KycBankInfo;
   const docInfo = kyc.document_info || {} as KycDocumentInfo;
 
+  const getStatusBadge = () => {
+    switch (kyc.status) {
+      case 'verified':
+        return (
+          <Badge variant="default" className="text-sm px-3 py-1 mt-2 sm:mt-0 bg-green-500 hover:bg-green-600">
+            <CheckCircle className="mr-1.5 h-4 w-4" /> Verified
+          </Badge>
+        );
+      case 'rejected':
+        return (
+          <Badge variant="destructive" className="text-sm px-3 py-1 mt-2 sm:mt-0 bg-red-500 hover:bg-red-600">
+            <XCircle className="mr-1.5 h-4 w-4" /> Rejected
+          </Badge>
+        );
+      case 'pending':
+      default:
+        return (
+          <Badge variant="secondary" className="text-sm px-3 py-1 mt-2 sm:mt-0 bg-yellow-500 hover:bg-yellow-600 text-white">
+            <HelpCircle className="mr-1.5 h-4 w-4" /> Pending
+          </Badge>
+        );
+    }
+  };
+  
+  const getStatusIcon = () => {
+    switch (kyc.status) {
+      case 'verified': return CheckCircle;
+      case 'rejected': return XCircle;
+      case 'pending':
+      default: return HelpCircle;
+    }
+  };
+
+
   return (
     <div className="container mx-auto p-4 sm:p-6 md:p-8">
       <Button variant="outline" asChild className="mb-6">
@@ -126,12 +160,9 @@ export default function KycDetailPage() {
           <div className="flex flex-col sm:flex-row justify-between items-start">
             <div>
               <CardTitle className="text-3xl font-bold">{pInfo.name || 'N/A'}</CardTitle>
-              <CardDescription className="text-lg text-muted-foreground">KYC Details (ID: {kyc.id})</CardDescription>
+              <CardDescription className="text-lg text-muted-foreground">KYC Record ID: {kyc.id}</CardDescription>
             </div>
-            <Badge variant={kyc.verified ? "default" : "destructive"} className={`text-sm px-3 py-1 mt-2 sm:mt-0 ${kyc.verified ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"}`}>
-              {kyc.verified ? <CheckCircle className="mr-1.5 h-4 w-4" /> : <XCircle className="mr-1.5 h-4 w-4" />}
-              {kyc.verified ? 'Verified' : 'Not Verified'}
-            </Badge>
+            {getStatusBadge()}
           </div>
         </CardHeader>
         <CardContent className="p-6">
@@ -178,37 +209,40 @@ export default function KycDetailPage() {
           </div>
 
           <Separator className="my-6" />
-          <SectionTitle title="KYC Status" icon={kyc.verified ? CheckCircle : XCircle} />
-          <InfoItem label="Current Status" value={kyc.verified ? 'Verified' : 'Not Verified'} />
-          <InfoItem label="Remarks" value={kyc.remarks} />
-          <InfoItem label="Submitted At" value={kyc.submittedAt ? (typeof kyc.submittedAt === 'string' ? new Date(kyc.submittedAt) : kyc.submittedAt as Date) : undefined} />
-          {kyc.verifiedAt && <InfoItem label="Verified At" value={typeof kyc.verifiedAt === 'string' ? new Date(kyc.verifiedAt) : kyc.verifiedAt as Date} />}
-          {kyc.verifiedBy && <InfoItem label="Verified By" value={kyc.verifiedBy} />}
+          <SectionTitle title="KYC Information & Status" icon={getStatusIcon()} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+            <InfoItem label="User ID" value={kyc.userId} />
+            <InfoItem label="Current Status" value={kyc.status} capitalize={true} />
+            <InfoItem label="Submitted At" value={kyc.submittedAt ? (typeof kyc.submittedAt === 'string' ? new Date(kyc.submittedAt) : kyc.submittedAt as Date) : undefined} />
+            {kyc.verifiedAt && <InfoItem label="Verified At" value={typeof kyc.verifiedAt === 'string' ? new Date(kyc.verifiedAt) : kyc.verifiedAt as Date} />}
+            {kyc.verifiedBy && <InfoItem label="Verified By (Admin ID)" value={kyc.verifiedBy} />}
+            <InfoItem label="Remarks" value={kyc.remarks} />
+          </div>
         </CardContent>
         <CardFooter className="p-6 border-t flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
-            {/* Placeholder for edit button if needed */}
-            {/* <Button variant="outline" disabled={mutation.isPending}><Edit3 className="mr-2 h-4 w-4"/> Edit KYC</Button> */}
-            {!kyc.verified ? (
+            {kyc.status !== 'verified' ? (
                 <Button 
                     onClick={() => mutation.mutate(true)} 
-                    disabled={mutation.isPending}
+                    disabled={mutation.isPending && mutation.variables === true}
                     className="bg-green-600 hover:bg-green-700"
                 >
                     {mutation.isPending && mutation.variables === true ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4"/>}
                     Mark as Verified
                 </Button>
-            ) : (
+            ) : null}
+            {kyc.status !== 'rejected' ? ( // Show "Mark as Rejected" if not already rejected (i.e., if pending or verified)
                  <Button 
                     variant="destructive" 
                     onClick={() => mutation.mutate(false)} 
-                    disabled={mutation.isPending}
+                    disabled={mutation.isPending && mutation.variables === false}
                 >
                     {mutation.isPending && mutation.variables === false ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <XCircle className="mr-2 h-4 w-4"/>}
-                    Mark as Not Verified
+                    Mark as Rejected
                 </Button>
-            )}
+            ): null}
         </CardFooter>
       </Card>
     </div>
   );
 }
+
