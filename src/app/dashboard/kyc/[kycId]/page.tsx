@@ -11,8 +11,8 @@ import Link from 'next/link';
 import { 
     ArrowLeft, Loader2, AlertTriangle, User, Briefcase, Banknote, FileArchive, 
     CheckCircle, XCircle, HelpCircle, Fingerprint, BookUser, Hash, SmartphoneNfc, 
-    ScanFace, CalendarDays, Cake, MapPin, CreditCard, Mail, Phone, Home, UserSquare, Landmark, Edit3, CalendarCheck2
-} from 'lucide-react'; // Added Home, UserSquare, Landmark, Edit3, CalendarCheck2
+    ScanFace, CalendarDays, Cake, MapPin, CreditCard, Mail, Phone, Home, UserSquare, Landmark, Edit3, CalendarCheck2, UserCircle
+} from 'lucide-react'; // Added Home, UserSquare, Landmark, Edit3, CalendarCheck2, UserCircle
 import { format, parseISO } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -65,7 +65,7 @@ const InfoItem = ({ label, value, capitalize = false, icon: Icon, isDate = false
 };
 
 const ImageViewer = ({ url, label }: { url?: string | null; label: string }) => {
-  const placeholderSrc = 'https://placehold.co/300x200.png'; // No text query param as per guidelines
+  const placeholderSrc = 'https://placehold.co/300x200.png'; 
   const displaySrc = url || placeholderSrc;
 
   return (
@@ -83,13 +83,13 @@ const ImageViewer = ({ url, label }: { url?: string | null; label: string }) => 
           alt={`${label}${!url ? ' - Not Provided' : ''}`}
           width={300}
           height={200}
-          className="object-cover w-full h-auto aspect-[3/2]" // aspect-[3/2] maintains 300x200 ratio
+          className="object-cover w-full h-auto aspect-[3/2]" 
           data-ai-hint="document identification"
           onError={(e) => {
             const target = e.currentTarget;
             if (target.src !== placeholderSrc) {
               target.src = placeholderSrc;
-              target.alt = `${label} - Image load failed`;
+              target.alt = `${label} - Image Unavailable`;
             }
           }}
         />
@@ -146,7 +146,7 @@ export default function KycDetailPage() {
         "Name": kyc.personal_info?.name || 'N/A',
         "Prefix": kyc.personal_info?.prefix || 'N/A',
         "Gender": kyc.personal_info?.gender || 'N/A',
-        "Date of Birth": kyc.personal_info?.dob ? (typeof kyc.personal_info.dob === 'string' ? kyc.personal_info.dob.split('T')[0] : format(kyc.personal_info.dob as Date, "yyyy-MM-dd")) : 'N/A',
+        "Date of Birth": kyc.personal_info?.dob ? (typeof kyc.personal_info.dob === 'string' ? (kyc.personal_info.dob.includes('T') ? kyc.personal_info.dob.split('T')[0] : kyc.personal_info.dob) : format(kyc.personal_info.dob as Date, "yyyy-MM-dd")) : 'N/A',
         "Age": kyc.personal_info?.age || 'N/A',
         "Marital Status": kyc.personal_info?.marital_status || 'N/A',
         "Father/Husband Name": kyc.personal_info?.father_name || 'N/A',
@@ -160,7 +160,7 @@ export default function KycDetailPage() {
         "Department": kyc.professional_info?.department || 'N/A',
         "Designation": kyc.professional_info?.designation || 'N/A',
         "Education": kyc.professional_info?.education || 'N/A',
-        "Date of Joining": kyc.professional_info?.joining_date ? (typeof kyc.professional_info.joining_date === 'string' ? kyc.professional_info.joining_date.split('T')[0] : format(kyc.professional_info.joining_date as Date, "yyyy-MM-dd")) : 'N/A',
+        "Date of Joining": kyc.professional_info?.joining_date ? (typeof kyc.professional_info.joining_date === 'string' ? (kyc.professional_info.joining_date.includes('T') ? kyc.professional_info.joining_date.split('T')[0] : kyc.professional_info.joining_date) : format(kyc.professional_info.joining_date as Date, "yyyy-MM-dd")) : 'N/A',
         "Aadhar Number": kyc.professional_info?.aadhar_number || 'N/A',
         "Name as per Aadhar": kyc.professional_info?.name_as_per_aadhar || 'N/A',
         "PAN Number": kyc.professional_info?.pan_number || 'N/A',
@@ -370,3 +370,4 @@ export default function KycDetailPage() {
     </div>
   );
 }
+
