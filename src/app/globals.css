@@ -35,12 +35,14 @@ body {
     --radius: 0.5rem;
 
     /* Sidebar specific theme variables */
-    --sidebar-background: 0 0% 10%; /* Darker sidebar background for contrast */
+    /* --sidebar-background: 0 0% 10%; */ /* Original dark bg, now handled by gradient */
+    --sidebar-gradient-start-light: hsl(var(--primary)); /* Red */
+    --sidebar-gradient-end-light: hsl(var(--accent)); /* Orange */
     --sidebar-foreground: 0 0% 95%; /* Lighter text for dark sidebar */
     --sidebar-primary: 0 65% 51%; /* Primary color for active/hover states in sidebar */
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 15%; /* Slightly lighter than sidebar bg for hover */
-    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-accent: hsla(0, 0%, 100%, 0.1); /* Subtle white highlight for hover/active items */
+    --sidebar-accent-foreground: 0 0% 98%; /* Text color on hover/active items */
     --sidebar-border: 0 0% 20%;
     --sidebar-ring: 0 65% 51%;
   }
@@ -72,13 +74,15 @@ body {
     --chart-5: 340 75% 55%;
 
     /* Sidebar specific theme variables for dark mode */
-    --sidebar-background: 240 6% 10%; /* Default dark sidebar */
+    /* --sidebar-background: 240 6% 10%; */ /* Original dark bg, now handled by gradient */
+    --sidebar-gradient-start-dark: hsl(240, 6%, 12%); /* Dark blue/gray */
+    --sidebar-gradient-end-dark: hsl(240, 8%, 8%);   /* Darker blue/gray */
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 0 65% 51%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4% 16%;
+    --sidebar-accent: hsl(240, 4%, 18%); /* Slightly lighter for hover/active on dark gradient */
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 240 4% 16%;
+    --sidebar-border: hsl(240, 4%, 16%);
     --sidebar-ring: 0 65% 51%;
   }
 }
@@ -95,5 +99,17 @@ body {
   }
   main {
     flex-grow: 1;
+  }
+}
+
+/* Apply the gradient to the sidebar */
+@layer components {
+  [data-sidebar="sidebar"] {
+    background-image: linear-gradient(160deg, var(--sidebar-gradient-start-light), var(--sidebar-gradient-end-light));
+    /* Ensure the text color has good contrast if not already handled by --sidebar-foreground */
+    color: hsl(var(--sidebar-foreground)); 
+  }
+  .dark [data-sidebar="sidebar"] {
+    background-image: linear-gradient(160deg, var(--sidebar-gradient-start-dark), var(--sidebar-gradient-end-dark));
   }
 }
