@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { 
     ArrowLeft, Loader2, AlertTriangle, User, Briefcase, Banknote, FileArchive, 
-    CheckCircle, XCircle, HelpCircle, Fingerprint, BookUser, Hash, SmartphoneNfc, 
-    ScanFace, CalendarDays, Cake, MapPin, CreditCard, Mail, Phone, Home, UserSquare, Landmark, Edit3, CalendarCheck2, UserCircle as UserCircleIcon
+    CheckCircle, XCircle, HelpCircle, BookUser, Hash, SmartphoneNfc, 
+    ScanFace, CalendarDays, Cake, MapPin, CreditCard, Mail, Phone, Home, UserSquare, Landmark, Edit3, CalendarCheck2, UserCircle as UserCircleIcon, Users // Added Users here
 } from 'lucide-react'; 
 import { format, parseISO } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
@@ -308,7 +308,7 @@ export default function KycDetailPage() {
             <InfoItem label="Designation" value={profInfo.designation} icon={UserSquare} />
             <InfoItem label="Education" value={profInfo.education} icon={BookUser} />
             <InfoItem label="Date of Joining" value={profInfo.joining_date} icon={CalendarDays} isDate={true} />
-            <InfoItem label="Aadhar Number" value={profInfo.aadhar_number} icon={Fingerprint} />
+            <InfoItem label="Aadhar Number" value={profInfo.aadhar_number} icon={CreditCard} /> {/* Changed Icon from Fingerprint */}
             <InfoItem label="Name as per Aadhar" value={profInfo.name_as_per_aadhar} icon={ScanFace} />
             <InfoItem label="PAN Number" value={profInfo.pan_number} icon={CreditCard} />
             <InfoItem label="UAN Number" value={profInfo.uan_number} icon={Hash} />
@@ -379,5 +379,7 @@ export default function KycDetailPage() {
     </div>
   );
 }
+
+    
 
     
