@@ -22,7 +22,7 @@ const profileSchema = z.object({
   mobile: z.string().optional().refine(val => !val || /^\+?[0-9\s-()]{7,20}$/.test(val), {
     message: "Invalid mobile number format"
   }),
-  address: z.string().optional().max(200, "Address too long"),
+  address: z.string().max(200, "Address too long").optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
