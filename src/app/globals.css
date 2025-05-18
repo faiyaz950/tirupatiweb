@@ -9,75 +9,91 @@ body {
 
 @layer base {
   :root {
-    --background: 0 43% 97%; /* #F9F3F3 */
-    --foreground: 240 10% 3.9%; /* Default dark text */
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 0 65% 51%; /* #D32F2F */
-    --primary-foreground: 0 0% 98%; /* White text on primary */
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 14 100% 56%; /* #FF5722 */
-    --accent-foreground: 0 0% 98%; /* White text on accent */
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 65% 51%; /* Primary color for rings */
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --background: 0 0% 100%; /* White */
+    --foreground: 222 84% 5%; /* Very Dark Blue/Near Black */
+    --card: 0 0% 100%; /* White */
+    --card-foreground: 222 84% 5%; /* Very Dark Blue/Near Black */
+    --popover: 0 0% 100%; /* White */
+    --popover-foreground: 222 84% 5%; /* Very Dark Blue/Near Black */
+    
+    --primary: 217 91% 60%; /* Vibrant Blue */
+    --primary-foreground: 0 0% 100%; /* White */
+    
+    --secondary: 215 28% 95%; /* Very Light Blue/Gray */
+    --secondary-foreground: 215 30% 25%; /* Dark Blue for text on secondary */
+    
+    --muted: 215 28% 95%; /* Very Light Blue/Gray */
+    --muted-foreground: 215 25% 55%; /* Medium Blue/Gray for text on muted */
+    
+    --accent: 200 95% 55%; /* Bright Blue (slightly different from primary) */
+    --accent-foreground: 0 0% 100%; /* White */
+    
+    --destructive: 0 84.2% 60.2%; /* Red (kept for destructive actions) */
+    --destructive-foreground: 0 0% 98%; /* White */
+    
+    --border: 215 20% 85%; /* Light Blue/Gray border */
+    --input: 215 20% 85%; /* Light Blue/Gray input border */
+    --ring: 217 91% 60%; /* Primary blue for focus rings */
+
+    --chart-1: 217 91% 60%; /* Blue */
+    --chart-2: 200 95% 55%; /* Accent Blue */
+    --chart-3: 210 80% 70%; /* Lighter Blue */
+    --chart-4: 225 70% 50%; /* Darker Blue */
+    --chart-5: 190 85% 65%; /* Cyan-ish Blue */
+    
     --radius: 0.5rem;
 
-    /* Header specific theme variables (can be same as sidebar or new) */
-    --header-gradient-start-light: hsl(var(--primary)); /* Deep Red */
-    --header-gradient-end-light: hsl(var(--accent));   /* Deep Orange */
+    /* Header specific theme variables (will be picked up by Tailwind gradient if using primary/accent) */
+    --header-gradient-start-light: hsl(var(--primary)); /* Blue */
+    --header-gradient-end-light: hsl(var(--accent));   /* Accent Blue */
     --header-foreground: hsl(var(--primary-foreground)); /* White text on gradient */
     
-    --header-nav-item-hover-bg-light: hsla(0, 0%, 100%, 0.1); /* Subtle white for hover */
+    --header-nav-item-hover-bg-light: hsla(0, 0%, 100%, 0.1); /* Subtle white for hover on blue gradient */
     --header-nav-item-active-bg-light: hsla(0, 0%, 100%, 0.2); /* Slightly more prominent white for active */
-
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
+    --background: 224 71% 4%; /* Very Dark Blue/Almost Black */
+    --foreground: 0 0% 98%; /* Off-White text */
+    
+    --card: 224 71% 6%; /* Slightly lighter than background */
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
+    
+    --popover: 224 71% 4%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 65% 51%; /* #D32F2F */
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 14.9%;
+    
+    --primary: 217 91% 60%; /* Vibrant Blue (consistent with light mode) */
+    --primary-foreground: 0 0% 100%; /* White */
+    
+    --secondary: 215 28% 15%; /* Dark Blue/Gray */
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 14 100% 56%; /* #FF5722 */
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    
+    --muted: 215 28% 15%;
+    --muted-foreground: 215 20% 70%; /* Lighter Blue/Gray for muted text */
+    
+    --accent: 200 95% 55%; /* Bright Blue (consistent) */
+    --accent-foreground: 0 0% 100%; /* White */
+    
+    --destructive: 0 72% 51%; /* Slightly darker red for dark mode */
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 65% 51%; /* Primary color for rings */
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    
+    --border: 215 28% 20%; /* Darker Blue/Gray border */
+    --input: 215 28% 20%;
+    --ring: 217 91% 60%;
+
+    --chart-1: 217 91% 60%;
+    --chart-2: 200 95% 55%;
+    --chart-3: 210 70% 50%;
+    --chart-4: 225 60% 40%;
+    --chart-5: 190 75% 45%;
 
     /* Header specific theme variables for dark mode */
-    --header-gradient-start-dark: hsl(240, 6%, 12%); /* Dark blue/gray */
-    --header-gradient-end-dark: hsl(240, 8%, 8%);   /* Darker blue/gray */
+    --header-gradient-start-dark: hsl(220, 40%, 10%); /* Darker blue */
+    --header-gradient-end-dark: hsl(220, 40%, 5%);   /* Even darker blue */
     --header-foreground: 0 0% 95%; /* Light text for dark gradient */
 
-    --header-nav-item-hover-bg-dark: hsla(0, 0%, 100%, 0.05); /* Very subtle white for hover */
-    --header-nav-item-active-bg-dark: hsla(0, 0%, 100%, 0.1);  /* Slightly more prominent white for active */
+    --header-nav-item-hover-bg-dark: hsla(0, 0%, 100%, 0.05); 
+    --header-nav-item-active-bg-dark: hsla(0, 0%, 100%, 0.1);
   }
 }
 
@@ -95,16 +111,3 @@ body {
     flex-grow: 1;
   }
 }
-
-/* Remove sidebar specific gradient application */
-/* 
-@layer components {
-  [data-sidebar="sidebar"] {
-    background-image: linear-gradient(160deg, var(--sidebar-gradient-start-light), var(--sidebar-gradient-end-light));
-    color: hsl(var(--sidebar-foreground)); 
-  }
-  .dark [data-sidebar="sidebar"] {
-    background-image: linear-gradient(160deg, var(--sidebar-gradient-start-dark), var(--sidebar-gradient-end-dark));
-  }
-}
-*/
