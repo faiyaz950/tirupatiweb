@@ -22,7 +22,7 @@ interface DashboardCardProps {
 
 function DashboardActionCard({ title, description, icon: Icon, href, cta }: DashboardCardProps) {
   return (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">
+    <Card className="rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out hover:-translate-y-1.5 flex flex-col">
       <CardHeader className="flex flex-row items-center space-x-4 pb-2">
         <div className="p-3 rounded-full bg-primary/10 text-primary">
           <Icon className="h-6 w-6" />
@@ -153,7 +153,7 @@ export default function SuperAdminDashboardPage() {
           href="/dashboard/profile"
           cta="Go to Profile"
         />
-         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 md:col-span-2 lg:col-span-1 flex flex-col">
+         <Card className="rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out hover:-translate-y-1.5 md:col-span-2 lg:col-span-1 flex flex-col">
           <CardHeader className="flex flex-row items-center space-x-4 pb-2">
             <div className="p-3 rounded-full bg-destructive/10 text-destructive">
               <LogOut className="h-6 w-6" />
