@@ -59,7 +59,11 @@ const NavLink = ({ href, label, icon: Icon, onClick }: NavLinkProps) => {
   );
 };
 
-const SidebarContentLayout = () => {
+interface SidebarContentLayoutProps {
+  isMobileSheet: boolean;
+}
+
+const SidebarContentLayout = ({ isMobileSheet }: SidebarContentLayoutProps) => {
   const { user, superAdminProfile, signOut } = useAuth();
 
   if (!user) return null;
@@ -81,9 +85,13 @@ const SidebarContentLayout = () => {
       <ScrollArea className="flex-1">
         <nav className="flex flex-col space-y-1 p-3">
           {navItems.map((item) => (
-            <SheetClose asChild key={item.href}>
-               <NavLink {...item} />
-            </SheetClose>
+            isMobileSheet ? (
+              <SheetClose asChild key={item.href}>
+                 <NavLink {...item} />
+              </SheetClose>
+            ) : (
+              <NavLink key={item.href} {...item} />
+            )
           ))}
         </nav>
       </ScrollArea>
@@ -91,25 +99,52 @@ const SidebarContentLayout = () => {
       <div className="p-4 border-t border-sidebar-border/20">
         <div className="flex items-center gap-3 mb-3">
           <Link href="/dashboard/profile" passHref>
-            <SheetClose asChild>
+            {isMobileSheet ? (
+              <SheetClose asChild>
+                <Avatar className="h-10 w-10 cursor-pointer border-2 border-sidebar-accent">
+                  <AvatarImage src={user.photoURL || undefined} alt={superAdminProfile?.name || user.email || "Admin"} />
+                  <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground">
+                    {superAdminProfile?.name?.[0] || user.email?.[0].toUpperCase() || "A"}
+                  </AvatarFallback>
+                </Avatar>
+              </SheetClose>
+            ) : (
               <Avatar className="h-10 w-10 cursor-pointer border-2 border-sidebar-accent">
                 <AvatarImage src={user.photoURL || undefined} alt={superAdminProfile?.name || user.email || "Admin"} />
                 <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground">
                   {superAdminProfile?.name?.[0] || user.email?.[0].toUpperCase() || "A"}
                 </AvatarFallback>
               </Avatar>
-            </SheetClose>
+            )}
           </Link>
           <div className="overflow-hidden">
             <p className="text-sm font-medium text-sidebar-foreground truncate max-w-[150px]">{superAdminProfile?.name || user.email}</p>
-            <SheetClose asChild>
+            {isMobileSheet ? (
+              <SheetClose asChild>
+                <Link href="/dashboard/profile" className="text-xs hover:underline text-sidebar-foreground/70">
+                  View Profile
+                </Link>
+              </SheetClose>
+            ) : (
               <Link href="/dashboard/profile" className="text-xs hover:underline text-sidebar-foreground/70">
                 View Profile
               </Link>
-            </SheetClose>
+            )}
           </div>
         </div>
-        <SheetClose asChild>
+        {isMobileSheet ? (
+          <SheetClose asChild>
+            <Button
+              variant="ghost"
+              onClick={signOut}
+              className="w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/80"
+              title="Logout"
+            >
+              <LogOut className="mr-2 h-5 w-5" />
+              Logout
+            </Button>
+          </SheetClose>
+        ) : (
           <Button
             variant="ghost"
             onClick={signOut}
@@ -119,7 +154,7 @@ const SidebarContentLayout = () => {
             <LogOut className="mr-2 h-5 w-5" />
             Logout
           </Button>
-        </SheetClose>
+        )}
       </div>
     </div>
   );
@@ -130,7 +165,7 @@ export function AppSidebar({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex lg:flex-col w-64 fixed inset-y-0 z-30">
-         <SidebarContentLayout />
+         <SidebarContentLayout isMobileSheet={false} />
       </aside>
 
       {/* Mobile Sidebar Trigger & Sheet */}
@@ -143,13 +178,14 @@ export function AppSidebar({ children }: { children: ReactNode }) {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-[280px] p-0 border-r-0">
-            <SidebarContentLayout />
+            <SidebarContentLayout isMobileSheet={true} />
           </SheetContent>
         </Sheet>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 lg:ml-64">
+        {/* Removed pt-20 that might have been added for a fixed header */}
         {children}
       </div>
     </div>
