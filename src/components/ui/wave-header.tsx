@@ -1,3 +1,4 @@
+
 import type { ReactNode } from 'react';
 
 interface WaveHeaderProps {
@@ -12,7 +13,7 @@ interface WaveHeaderProps {
 export function WaveHeader({ title, subtitle, children, icon, className, contentClassName }: WaveHeaderProps) {
   return (
     <div className={`relative text-white shadow-lg ${className}`}>
-      <div className="absolute inset-0 bg-gradient-to-br from-primary to-red-500 opacity-90"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent opacity-90"></div>
       <div
         className="absolute bottom-0 left-0 w-full h-20 sm:h-24 md:h-32"
         style={{ transform: 'translateY(1px)' }} // Prevents thin line gap
