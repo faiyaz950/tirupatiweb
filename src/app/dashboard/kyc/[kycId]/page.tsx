@@ -80,7 +80,7 @@ const ImageViewer = ({ url, label }: { url?: string | null; label: string }) => 
       >
         <Image
           src={displaySrc}
-          alt={`${label}${!url ? ' - Not Provided' : ''}`}
+          alt={`${label}${!url ? ' - Image Unavailable' : ''}`}
           width={300}
           height={200}
           className="object-cover w-full h-auto aspect-[3/2]" 
@@ -123,11 +123,11 @@ export default function KycDetailPage() {
   });
 
   const mutation = useMutation({
-    mutationFn: (newStatus: boolean) => updateKycRecord(kycId, { verified: newStatus, status: newStatus ? 'verified' : 'rejected' }),
+    mutationFn: (newStatus: KYC['status']) => updateKycRecord(kycId, { status: newStatus, verified: newStatus === 'verified' }),
     onSuccess: (_, newStatus) => {
       queryClient.invalidateQueries({ queryKey: ['kyc', kycId] });
       queryClient.invalidateQueries({ queryKey: ['kycRecords'] });
-      toast({ title: "KYC Status Updated", description: `KYC marked as ${newStatus ? 'Verified' : 'Rejected'}.` });
+      toast({ title: "KYC Status Updated", description: `KYC marked as ${newStatus}.` });
     },
     onError: (err: Error) => {
       toast({ title: "Update Failed", description: err.message, variant: "destructive" });
@@ -286,14 +286,14 @@ export default function KycDetailPage() {
           <SectionTitle title="Personal Information" icon={User} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
             <InfoItem label="Name" value={pInfo.name} icon={User}/>
-            <InfoItem label="Prefix" value={pInfo.prefix} icon={User}/>
-            <InfoItem label="Gender" value={pInfo.gender} icon={User}/>
+            <InfoItem label="Prefix" value={pInfo.prefix} icon={UserCircleIcon}/>
+            <InfoItem label="Gender" value={pInfo.gender} icon={Users}/>
             <InfoItem label="Date of Birth" value={pInfo.dob} icon={CalendarDays} isDate={true}/>
             <InfoItem label="Age" value={pInfo.age} icon={Cake}/>
             <InfoItem label="Marital Status" value={pInfo.marital_status} icon={UserSquare}/>
             <InfoItem label="Father/Husband Name" value={pInfo.father_name} icon={UserSquare}/>
             <InfoItem label="Phone" value={pInfo.mobile} icon={Phone}/>
-            <InfoItem label="Alternative Phone" value={pInfo.alt_mobile} icon={Phone}/>
+            <InfoItem label="Alternative Phone" value={pInfo.alt_mobile} icon={SmartphoneNfc}/>
             <InfoItem label="Email" value={pInfo.email} icon={Mail}/>
             <InfoItem label="Address" value={pInfo.address} icon={MapPin}/>
             <InfoItem label="Pincode" value={pInfo.pincode} icon={Hash}/>
@@ -345,31 +345,39 @@ export default function KycDetailPage() {
         <CardFooter className="p-6 border-t flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
             {kyc.status !== 'verified' ? (
                 <Button 
-                    onClick={() => mutation.mutate(true)} 
-                    disabled={mutation.isPending && mutation.variables === true}
+                    onClick={() => mutation.mutate('verified')} 
+                    disabled={mutation.isPending && mutation.variables === 'verified'}
                     className="bg-green-600 hover:bg-green-700"
                 >
-                    {mutation.isPending && mutation.variables === true ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4"/>}
+                    {mutation.isPending && mutation.variables === 'verified' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4"/>}
                     Mark as Verified
                 </Button>
             ) : null}
             {kyc.status !== 'rejected' ? ( 
                  <Button 
                     variant="destructive" 
-                    onClick={() => mutation.mutate(false)} 
-                    disabled={mutation.isPending && mutation.variables === false}
+                    onClick={() => mutation.mutate('rejected')} 
+                    disabled={mutation.isPending && mutation.variables === 'rejected'}
                 >
-                    {mutation.isPending && mutation.variables === false ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <XCircle className="mr-2 h-4 w-4"/>}
+                    {mutation.isPending && mutation.variables === 'rejected' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <XCircle className="mr-2 h-4 w-4"/>}
                     Mark as Rejected
                 </Button>
             ): null}
+             {kyc.status === 'verified' || kyc.status === 'rejected' ? ( // Show pending only if already verified or rejected
+                <Button 
+                    variant="outline" 
+                    onClick={() => mutation.mutate('pending')} 
+                    disabled={mutation.isPending && mutation.variables === 'pending'}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                >
+                    {mutation.isPending && mutation.variables === 'pending' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <HelpCircle className="mr-2 h-4 w-4"/>}
+                    Mark as Pending
+                </Button>
+            ) : null}
         </CardFooter>
       </Card>
     </div>
   );
 }
-
-
-    
 
     
