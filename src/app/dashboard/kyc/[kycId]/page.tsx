@@ -35,10 +35,16 @@ const InfoItem = ({ label, value, capitalize = false, icon: Icon, isDate = false
     displayValue = format(value, "PPP"); // Format: Jun 6, 2024
   } else if (isDate && typeof value === 'string') {
     try {
-      const date = parseISO(value); // Handles ISO strings like "1994-05-16T00:00:00.000Z" or "1994-05-16"
+      // Attempt to parse ISO strings like "1994-05-16T00:00:00.000Z" or "1994-05-16"
+      const date = parseISO(value); 
       displayValue = format(date, "PPP");
     } catch (e) {
-      displayValue = value; // If parsing fails, show original string
+      // If parsing fails, try to format as if it's already a simple date string or just show original
+      try {
+        displayValue = format(new Date(value), "PPP");
+      } catch (formatErr) {
+        displayValue = value; // Fallback to original string if all parsing/formatting fails
+      }
     }
   }
   else if (value) {
@@ -58,25 +64,48 @@ const InfoItem = ({ label, value, capitalize = false, icon: Icon, isDate = false
   );
 };
 
-const ImageViewer = ({ url, label }: {url?: string | null, label: string}) => {
-    if (!url) return <InfoItem label={label} value="Not Provided" />;
-    return (
-        <div className="py-1.5">
-            <p className="text-sm text-muted-foreground mb-1">{label}:</p>
-            <a href={url} target="_blank" rel="noopener noreferrer" className="block w-full max-w-xs relative group">
-                <Image 
-                    src={url} 
-                    alt={label} 
-                    width={300} 
-                    height={200} 
-                    className="rounded-md object-cover border shadow-sm group-hover:opacity-80 transition-opacity"
-                    data-ai-hint="document identification"
-                    onError={(e) => (e.currentTarget.src = 'https://placehold.co/300x200.png?text=Image+Unavailable')}
-                />
-                <span className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity text-white text-sm rounded-md">View Full Image</span>
-            </a>
-        </div>
-    );
+const ImageViewer = ({ url, label }: { url?: string | null; label: string }) => {
+  const placeholderSrc = 'https://placehold.co/300x200.png'; // No text query param as per guidelines
+  const displaySrc = url || placeholderSrc;
+
+  return (
+    <div className="py-1.5">
+      <p className="text-sm text-muted-foreground mb-1">{label}:</p>
+      <a
+        href={url || '#'}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`block w-full max-w-xs relative group rounded-md overflow-hidden border shadow-sm ${!url ? 'cursor-default' : 'hover:opacity-90 transition-opacity'}`}
+        onClick={(e) => { if (!url) e.preventDefault(); }}
+      >
+        <Image
+          src={displaySrc}
+          alt={`${label}${!url ? ' - Not Provided' : ''}`}
+          width={300}
+          height={200}
+          className="object-cover w-full h-auto aspect-[3/2]" // aspect-[3/2] maintains 300x200 ratio
+          data-ai-hint="document identification"
+          onError={(e) => {
+            const target = e.currentTarget;
+            if (target.src !== placeholderSrc) {
+              target.src = placeholderSrc;
+              target.alt = `${label} - Image load failed`;
+            }
+          }}
+        />
+        {url && (
+          <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity text-white text-sm font-medium">
+            View Full Image
+          </span>
+        )}
+        {!url && (
+           <span className="absolute inset-0 flex items-center justify-center bg-black/60 text-white text-xs p-2 text-center font-medium">
+             {label} Not Provided
+           </span>
+        )}
+      </a>
+    </div>
+  );
 };
 
 
@@ -261,7 +290,7 @@ export default function KycDetailPage() {
             <InfoItem label="Gender" value={pInfo.gender} icon={User}/>
             <InfoItem label="Date of Birth" value={pInfo.dob} icon={CalendarDays} isDate={true}/>
             <InfoItem label="Age" value={pInfo.age} icon={Cake}/>
-            <InfoItem label="Marital Status" value={pInfo.marital_status} icon={User}/>
+            <InfoItem label="Marital Status" value={pInfo.marital_status} icon={UserSquare}/>
             <InfoItem label="Father/Husband Name" value={pInfo.father_name} icon={UserSquare}/>
             <InfoItem label="Phone" value={pInfo.mobile} icon={Phone}/>
             <InfoItem label="Alternative Phone" value={pInfo.alt_mobile} icon={Phone}/>
@@ -307,10 +336,10 @@ export default function KycDetailPage() {
           <Separator className="my-6" />
           <SectionTitle title="KYC Information & Status" icon={getStatusIcon()} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-            <InfoItem label="User ID" value={kyc.userId} icon={Fingerprint} />
-            <InfoItem label="Current Status" value={kyc.status} capitalize={true} />
-            <InfoItem label="Submitted At" value={kyc.submittedAt ? (typeof kyc.submittedAt === 'string' ? parseISO(kyc.submittedAt) : kyc.submittedAt as Date) : undefined} icon={CalendarDays}/>
-            {kyc.verifiedAt && <InfoItem label="Verified At" value={typeof kyc.verifiedAt === 'string' ? parseISO(kyc.verifiedAt) : kyc.verifiedAt as Date} icon={CalendarCheck2} />}
+            <InfoItem label="User ID" value={kyc.userId} icon={UserCircle} />
+            <InfoItem label="Current Status" value={kyc.status} capitalize icon={getStatusIcon()} />
+            <InfoItem label="Submitted At" value={kyc.submittedAt ? (typeof kyc.submittedAt === 'string' ? parseISO(kyc.submittedAt) : kyc.submittedAt as Date) : undefined} icon={CalendarDays} isDate={true}/>
+            {kyc.verifiedAt && <InfoItem label="Verified At" value={typeof kyc.verifiedAt === 'string' ? parseISO(kyc.verifiedAt) : kyc.verifiedAt as Date} icon={CalendarCheck2} isDate={true} />}
             {kyc.verifiedBy && <InfoItem label="Verified By" value={kyc.verifiedBy} icon={UserSquare} />}
             <InfoItem label="Remarks" value={kyc.remarks} icon={Edit3} />
           </div>
@@ -341,6 +370,3 @@ export default function KycDetailPage() {
     </div>
   );
 }
-
-
-    
