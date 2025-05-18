@@ -8,7 +8,7 @@ import type { KYC, KycPersonalInfo, KycProfessionalInfo, KycBankInfo, KycDocumen
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, AlertTriangle, User, Briefcase, Banknote, FileArchive, CheckCircle, XCircle, Edit3, HelpCircle, Fingerprint } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertTriangle, User, Briefcase, Banknote, FileArchive, CheckCircle, XCircle, Edit3, HelpCircle, Fingerprint, BookUser, Hash, SmartphoneNfc, ScanFace, CalendarOff, CircleUser, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -22,9 +22,12 @@ const SectionTitle = ({ title, icon: Icon }: { title: string; icon: React.Elemen
   </div>
 );
 
-const InfoItem = ({ label, value, capitalize = false }: { label: string; value?: string | null | boolean | Date; capitalize?: boolean }) => (
-  <div className="grid grid-cols-3 gap-2 py-1.5">
-    <span className="text-sm text-muted-foreground col-span-1">{label}:</span>
+const InfoItem = ({ label, value, capitalize = false, icon: Icon }: { label: string; value?: string | null | boolean | Date; capitalize?: boolean; icon?: React.ElementType }) => (
+  <div className="grid grid-cols-3 gap-2 py-1.5 items-start">
+    <span className="text-sm text-muted-foreground col-span-1 flex items-center">
+      {Icon && <Icon className="mr-2 h-4 w-4 text-muted-foreground" />}
+      {label}:
+    </span>
     <span className="font-medium col-span-2 break-words">
       {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : 
        value instanceof Date ? format(value, "PPP") : 
@@ -188,7 +191,15 @@ export default function KycDetailPage() {
             <InfoItem label="Designation" value={profInfo.designation} />
             <InfoItem label="Department" value={profInfo.department} />
             <InfoItem label="Employee ID" value={profInfo.employee_id} />
-            <InfoItem label="Joining Date" value={profInfo.joining_date} />
+            <InfoItem label="Joining Date" value={profInfo.joining_date ? (typeof profInfo.joining_date === 'string' ? new Date(profInfo.joining_date) : profInfo.joining_date as Date) : undefined} />
+            <InfoItem label="PAN Number" value={profInfo.pan_number} icon={CreditCard} />
+            <InfoItem label="Education" value={profInfo.education} icon={BookUser} />
+            <InfoItem label="ESIC Number" value={profInfo.esic_number} icon={Hash} />
+            <InfoItem label="Mobile Linked to Aadhar" value={profInfo.mobile_linked_to_aadhar} icon={SmartphoneNfc} />
+            <InfoItem label="Name as per Aadhar" value={profInfo.name_as_per_aadhar} icon={ScanFace} />
+            <InfoItem label="Date of Exit" value={profInfo.date_of_exit ? (typeof profInfo.date_of_exit === 'string' ? new Date(profInfo.date_of_exit) : profInfo.date_of_exit as Date) : undefined} icon={CalendarOff} />
+            <InfoItem label="UAN Number" value={profInfo.uan_number} icon={CircleUser} />
+            <InfoItem label="Aadhar Number" value={profInfo.aadhar_number} />
           </div>
 
           <Separator className="my-6" />
@@ -211,7 +222,7 @@ export default function KycDetailPage() {
           <Separator className="my-6" />
           <SectionTitle title="KYC Information & Status" icon={getStatusIcon()} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-            <InfoItem label="User ID" value={kyc.userId} />
+            <InfoItem label="User ID" value={kyc.userId} icon={Fingerprint} />
             <InfoItem label="Current Status" value={kyc.status} capitalize={true} />
             <InfoItem label="Submitted At" value={kyc.submittedAt ? (typeof kyc.submittedAt === 'string' ? new Date(kyc.submittedAt) : kyc.submittedAt as Date) : undefined} />
             {kyc.verifiedAt && <InfoItem label="Verified At" value={typeof kyc.verifiedAt === 'string' ? new Date(kyc.verifiedAt) : kyc.verifiedAt as Date} />}

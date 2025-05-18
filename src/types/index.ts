@@ -45,7 +45,15 @@ export interface KycProfessionalInfo {
   designation?: string;
   department?: string;
   employee_id?: string;
-  joining_date?: string;
+  joining_date?: string; // Date as string or Date object
+  pan_number?: string;
+  education?: string;
+  esic_number?: string;
+  mobile_linked_to_aadhar?: string;
+  name_as_per_aadhar?: string;
+  date_of_exit?: string; // Date as string or Date object
+  uan_number?: string;
+  aadhar_number?: string;
   // ... any other professional fields
 }
 
