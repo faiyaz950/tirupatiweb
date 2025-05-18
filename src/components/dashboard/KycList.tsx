@@ -13,7 +13,8 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { 
     Loader2, FileText, AlertTriangle, Search, Filter, 
-    CheckCircle, XCircle, HelpCircle, Eye, Building, User, UserCheck
+    CheckCircle, XCircle, HelpCircle, Eye, Building, User, UserCheck,
+    Briefcase, Cake, Users as UsersIcon // Added Briefcase, Cake, UsersIcon
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { KycExportButton } from './KycExportButton';
@@ -25,12 +26,12 @@ const statusOptions = [
   { value: 'rejected', label: 'Rejected' },
 ];
 
-const KycCardInfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value?: string | null }) => (
+const KycCardInfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value?: string | null | React.ReactNode }) => (
   <div className="flex items-center space-x-2 text-sm">
     <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
     <div>
       <span className="text-muted-foreground">{label}: </span> 
-      <span className="font-medium break-all">{value || 'N/A'}</span>
+      {typeof value === 'string' || typeof value === 'number' ? <span className="font-medium break-all">{value || 'N/A'}</span> : value}
     </div>
   </div>
 );
@@ -156,7 +157,7 @@ export function KycList() {
                   </Avatar>
                   <div>
                     <CardTitle className="text-xl font-bold truncate" title={kyc.personal_info?.name || 'N/A'}>{kyc.personal_info?.name || 'N/A'}</CardTitle>
-                    <CardDescription className="text-sm text-muted-foreground mt-0.5 min-h-[1.25rem]"> {/* min-h to reduce layout shift */}
+                    <CardDescription className="text-sm text-muted-foreground mt-0.5 min-h-[1.25rem]">
                       {kyc.status === 'verified' && kyc.verifiedBy ? (
                         <span className="flex items-center">
                           <UserCheck className="mr-1.5 h-4 w-4 text-green-500" />
@@ -169,13 +170,14 @@ export function KycList() {
               </CardHeader>
               <CardContent className="p-5 space-y-3 flex-grow">
                 <KycCardInfoItem icon={Building} label="Company" value={kyc.professional_info?.company_name} />
-                <div className="flex items-center space-x-2 text-sm">
-                  <User className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <div>
-                     <span className="text-muted-foreground">Status: </span>
-                     {getStatusBadge(kyc.status)}
-                  </div>
-                </div>
+                <KycCardInfoItem icon={Briefcase} label="Designation" value={kyc.professional_info?.designation} />
+                <KycCardInfoItem icon={Cake} label="Age" value={kyc.personal_info?.age} />
+                <KycCardInfoItem icon={UsersIcon} label="Gender" value={kyc.personal_info?.gender} />
+                <KycCardInfoItem 
+                    icon={User} // Placeholder, ideally should be specific like CheckCircle, XCircle, HelpCircle
+                    label="Status" 
+                    value={getStatusBadge(kyc.status)} 
+                />
               </CardContent>
               <CardFooter className="p-5 border-t bg-muted/20">
                 <Link href={`/dashboard/kyc/${kyc.id}`} passHref className="w-full">
@@ -191,3 +193,4 @@ export function KycList() {
     </div>
   );
 }
+
