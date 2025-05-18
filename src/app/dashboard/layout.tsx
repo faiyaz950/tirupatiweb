@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { DashboardHeader } from '@/components/layout/DashboardHeader'; // New Header
+import { AppSidebar } from '@/components/layout/AppSidebar'; // Use AppSidebar
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, loading, isSuperAdmin } = useAuth();
@@ -32,11 +32,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <DashboardHeader />
-      <main className="flex-1 overflow-auto p-4 sm:p-6 md:p-8 pt-20"> {/* Add pt-20 to account for fixed header height */}
+    <AppSidebar>
+      <main className="flex-1 overflow-auto p-4 sm:p-6 md:p-8"> {/* Removed pt-20 */}
         {children}
       </main>
-    </div>
+    </AppSidebar>
   );
 }

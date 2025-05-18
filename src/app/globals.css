@@ -43,13 +43,16 @@ body {
     
     --radius: 0.5rem;
 
-    /* Header specific theme variables (will be picked up by Tailwind gradient if using primary/accent) */
-    --header-gradient-start-light: hsl(var(--primary)); /* Blue */
-    --header-gradient-end-light: hsl(var(--accent));   /* Accent Blue */
-    --header-foreground: hsl(var(--primary-foreground)); /* White text on gradient */
-    
-    --header-nav-item-hover-bg-light: hsla(0, 0%, 100%, 0.1); /* Subtle white for hover on blue gradient */
-    --header-nav-item-active-bg-light: hsla(0, 0%, 100%, 0.2); /* Slightly more prominent white for active */
+    /* Sidebar specific theme variables */
+    --sidebar-background: hsl(var(--primary)); /* Fallback */
+    --sidebar-foreground: hsl(0 0% 100%); /* White text */
+    --sidebar-accent: hsl(210 100% 40%); /* Darker blue for hover */
+    --sidebar-accent-foreground: hsl(0 0% 100%); /* White text on hover */
+    --sidebar-border: hsl(var(--primary) / 0.5);
+    --sidebar-ring: hsl(var(--primary));
+
+    --sidebar-gradient-start-light: hsl(0, 0%, 100%); /* White */
+    --sidebar-gradient-end-light: hsl(var(--primary));   /* Primary Blue */
   }
 
   .dark {
@@ -87,13 +90,16 @@ body {
     --chart-4: 225 60% 40%;
     --chart-5: 190 75% 45%;
 
-    /* Header specific theme variables for dark mode */
-    --header-gradient-start-dark: hsl(220, 40%, 10%); /* Darker blue */
-    --header-gradient-end-dark: hsl(220, 40%, 5%);   /* Even darker blue */
-    --header-foreground: 0 0% 95%; /* Light text for dark gradient */
+    /* Sidebar specific theme variables for dark mode */
+    --sidebar-background: hsl(224 71% 6%);
+    --sidebar-foreground: hsl(0 0% 95%);
+    --sidebar-accent: hsl(215 28% 20%);
+    --sidebar-accent-foreground: hsl(0 0% 98%);
+    --sidebar-border: hsl(215 28% 15% / 0.5);
+    --sidebar-ring: hsl(var(--primary));
 
-    --header-nav-item-hover-bg-dark: hsla(0, 0%, 100%, 0.05); 
-    --header-nav-item-active-bg-dark: hsla(0, 0%, 100%, 0.1);
+    --sidebar-gradient-start-dark: hsl(220, 40%, 10%); /* Darker blue */
+    --sidebar-gradient-end-dark: hsl(220, 40%, 5%);   /* Even darker blue */
   }
 }
 
@@ -109,5 +115,15 @@ body {
   }
   main {
     flex-grow: 1;
+  }
+}
+
+@layer components {
+  /* Apply gradient to sidebar */
+  [data-sidebar="sidebar"] {
+    @apply bg-gradient-to-b from-[var(--sidebar-gradient-start-light)] to-[var(--sidebar-gradient-end-light)];
+  }
+  .dark [data-sidebar="sidebar"] {
+    @apply bg-gradient-to-b from-[var(--sidebar-gradient-start-dark)] to-[var(--sidebar-gradient-end-dark)];
   }
 }
