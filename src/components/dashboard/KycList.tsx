@@ -15,13 +15,13 @@ import Link from 'next/link';
 import { Loader2, FileText, AlertTriangle, Search, Filter, CheckCircle, XCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { KycExportButton } from './KycExportButton';
-import { formatDistanceToNow } from 'date-fns';
+// import { formatDistanceToNow } from 'date-fns'; // No longer needed here
 
 
 const statusOptions = [
   { value: 'all', label: 'All Statuses' },
   { value: 'verified', label: 'Verified' },
-  { value: 'unverified', label: 'Unverified' },
+  { value: 'unverified', label: 'Unverified' }, // This typically means pending or rejected
 ];
 
 export function KycList() {
@@ -31,18 +31,11 @@ export function KycList() {
   const { data: kycRecords = [], isLoading, error, refetch } = useQuery<KYC[]>({
     queryKey: ['kycRecords', { searchQuery: searchTerm, status: filterStatus }],
     queryFn: () => getAllKycRecords({ searchQuery: searchTerm, status: filterStatus === 'all' ? undefined : filterStatus }),
-    // Stale time can be adjusted based on how frequently KYC data updates
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000, 
   });
 
-  // Client-side search and filter if Firestore query is not precise enough or for small datasets.
-  // The getAllKycRecords already implements basic filtering logic.
-  // If more complex client-side filtering is needed:
-  // const filteredKycRecords = useMemo(() => { ... }, [kycRecords, searchTerm, filterStatus]);
-  // For this implementation, we rely on the query to do the heavy lifting for status
-  // and basic search. The queryKey includes filters to refetch when they change.
 
-  if (isLoading && !kycRecords?.length) { // Show loader only on initial load or if data is empty
+  if (isLoading && !kycRecords?.length) { 
     return (
       <div className="flex h-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -62,15 +55,15 @@ export function KycList() {
     );
   }
   
-  const formatSubmittedAt = (submittedAt: KYC['submittedAt']) => {
-    if (!submittedAt) return 'N/A';
-    try {
-      const date = typeof submittedAt === 'string' ? new Date(submittedAt) : (submittedAt as any).toDate ? (submittedAt as any).toDate() : submittedAt;
-      return formatDistanceToNow(date, { addSuffix: true });
-    } catch (e) {
-      return 'Invalid Date';
-    }
-  };
+  // const formatSubmittedAt = (submittedAt: KYC['submittedAt']) => { // No longer needed here
+  //   if (!submittedAt) return 'N/A';
+  //   try {
+  //     const date = typeof submittedAt === 'string' ? new Date(submittedAt) : (submittedAt as any).toDate ? (submittedAt as any).toDate() : submittedAt;
+  //     return formatDistanceToNow(date, { addSuffix: true });
+  //   } catch (e) {
+  //     return 'Invalid Date';
+  //   }
+  // };
 
 
   return (
@@ -123,7 +116,7 @@ export function KycList() {
               <TableRow>
                 <TableHead>Applicant</TableHead>
                 <TableHead>Company</TableHead>
-                <TableHead>Submitted</TableHead>
+                {/* <TableHead>Submitted</TableHead> Removed this column */}
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -140,11 +133,18 @@ export function KycList() {
                     </div>
                   </TableCell>
                   <TableCell>{kyc.professional_info?.company_name || 'N/A'}</TableCell>
-                  <TableCell>{formatSubmittedAt(kyc.submittedAt)}</TableCell>
+                  {/* <TableCell>{formatSubmittedAt(kyc.submittedAt)}</TableCell> Removed this cell */}
                   <TableCell>
-                    <Badge variant={kyc.verified ? "default" : "destructive"} className={kyc.verified ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"}>
-                      {kyc.verified ? <CheckCircle className="mr-1 h-3.5 w-3.5" /> : <XCircle className="mr-1 h-3.5 w-3.5" />}
-                      {kyc.verified ? 'Verified' : 'Not Verified'}
+                    <Badge 
+                      variant={kyc.status === 'verified' ? "default" : kyc.status === 'rejected' ? "destructive" : "secondary"} 
+                      className={
+                        kyc.status === 'verified' ? "bg-green-500 hover:bg-green-600" : 
+                        kyc.status === 'rejected' ? "bg-red-500 hover:bg-red-600" :
+                        "bg-yellow-500 hover:bg-yellow-600 text-white" // For pending
+                      }
+                    >
+                      {kyc.status === 'verified' ? <CheckCircle className="mr-1 h-3.5 w-3.5" /> : kyc.status === 'rejected' ? <XCircle className="mr-1 h-3.5 w-3.5" /> : <XCircle className="mr-1 h-3.5 w-3.5" /> /* Consider a pending icon */}
+                      {kyc.status.charAt(0).toUpperCase() + kyc.status.slice(1)}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
