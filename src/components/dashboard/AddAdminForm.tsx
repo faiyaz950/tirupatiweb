@@ -19,7 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as firebaseSignOut, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase"; // db is imported
+import { doc, collection } from "firebase/firestore"; // Added doc and collection imports
 import { addAdminToFirestore } from "@/lib/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import React, { useState } from "react";
@@ -40,7 +41,7 @@ const formSchema = z.object({
   department: z.string().min(2, {message: "Department is required"}).max(100),
   designation: z.string().min(2, {message: "Designation is required"}).max(100),
   availability: z.string().min(2, {message: "Availability is required"}).max(50),
-  selectedCompany: z.string({ required_error: "Please select a company for the admin." }),
+  selectedCompany: z.string({ required_error: "Please select a company for the admin." }).min(1, {message: "Please select a company for the admin."}), // Ensure non-empty string
   superAdminPassword: z.string().min(6, { message: "Super Admin password is required." }),
 });
 
@@ -64,7 +65,7 @@ export function AddAdminForm() {
       department: "",
       designation: "",
       availability: "",
-      selectedCompany: undefined,
+      selectedCompany: "", // Changed from undefined to ""
       superAdminPassword: "",
     },
   });
@@ -79,98 +80,24 @@ export function AddAdminForm() {
 
     setIsLoading(true);
     setErrorMessage(null);
+    let newAdminUID: string | undefined;
 
     try {
       // 1. Re-authenticate Super Admin (important for sensitive operations)
       const credential = EmailAuthProvider.credential(superAdminUser.email, values.superAdminPassword);
       await reauthenticateWithCredential(auth.currentUser!, credential);
       
-      // 2. Create the new admin user
-      // Temporarily use a separate Auth instance or manage sign-in state carefully
-      // For simplicity in client-side, we'll create, then sign out, then sign super admin back in.
-      // This is not ideal. A backend function is better.
-      // Firebase doesn't allow creating users when another user is signed in with client SDK.
-      // The Flutter code's approach of signing out the new user and signing back in superadmin is complex and stateful.
-      // A better way with client SDK is to inform superadmin that they will be temporarily signed out.
-      // Or, use a Firebase Function to create user.
-      // Given the constraints, we'll simulate the Flutter logic as best as possible
-      // but this has limitations and potential UX issues.
-      
-      // The most direct client-side approach for createUserWithEmailAndPassword is for the user *being created* to be the one "signing up".
-      // To do this as an admin, you typically need Admin SDK (backend).
-      // The Flutter code's signIn/signOut dance is to work around this.
-      // The reauthentication above is a good security step.
-
-      // Due to client SDK limitations, directly creating a user by an admin and then adding to Firestore
-      // without complex auth juggling or Admin SDK (backend) is hard.
-      // The Flutter code relies on `createUserWithEmailAndPassword` which signs in the new user.
-      // Then it signs out that new user. Then signs in superadmin. This is tricky.
-
-      // For this web version, we'll simplify: Superadmin creates the record in Firestore.
-      // The actual Firebase Auth user creation would typically be handled by the user themselves via an invite link,
-      // or by an Admin SDK.
-      // Let's assume the user already exists in Firebase Auth or will be created separately.
-      // We will focus on adding the *admin profile* to Firestore.
-      // If we must create user:
-      // Create user using a temporary auth instance or by signing out superadmin. THIS IS RISKY.
-      // For now, let's assume a Firebase Function would handle user creation.
-      // The prompt said: "New admin user is created in Firebase Auth." "Admin details are saved in Firestore admins collection."
-      // This implies we must try. The Flutter code uses `FirebaseAuth.instance.createUserWithEmailAndPassword`.
-      // This will sign in the new user. Then Flutter code signs out new user and signs back in superadmin.
-      // This is very hard to replicate safely on web client-side without potential auth state issues.
-
-      // Simplification: We will add to Firestore. User creation in Auth is a separate step or requires Admin SDK.
-      // However, the prompt is quite specific. Let's attempt a simplified version of the auth dance.
-      // THIS IS A HACKY workaround for client-side limitations.
-      
-      // Create temporary secondary app instance to create user without signing out current superadmin
-      // This is not directly possible with client SDKs in a clean way.
-      // The best approach is to use Firebase Functions.
-      // Given the context, I will proceed with adding admin data to Firestore,
-      // and note that user creation in Auth should ideally be separate or via Admin SDK.
-      // For the sake of fulfilling "New admin user is created in Firebase Auth",
-      // I'll show the createUserWithEmailAndPassword call, but acknowledge its issues in this context.
-
-      // The most robust client-side way to achieve this without Admin SDK is to create an "invitation" system.
-      // The prompt asks to convert Flutter code. Flutter's FirebaseAuth instance might behave differently or have different session management.
-
-      // Let's try to fulfill the Firebase Auth user creation, with a big caveat.
-      // This part is highly problematic client-side if super admin is to remain logged in.
-      // The code will attempt to create the user. For a real app, use Firebase Functions.
-      
-      const tempAppName = `temp-app-${Date.now()}`;
-      // This is a conceptual placeholder - client SDK doesn't work like this easily for multiple auth states.
-      // You cannot simply have two auth instances for different users simultaneously in the client SDK.
-      // One option is to make an API call to a Firebase Function.
-      // Since we don't have backend, we simulate the "creation" and Firestore save.
-      // We will *not* actually call createUserWithEmailAndPassword here because it will mess up current auth state.
-      // We'll assume the UID is pre-generated or comes from another system for this example.
-      // Or, if we absolutely must, we can inform the user they will be signed out.
-      
-      // For now, let's generate a placeholder UID and explain this limitation.
-      // Let's assume the admin user account is created via a separate process or invite.
-      // We will create the Firestore document.
-      // The prompt is very specific about Flutter code. Let's make a note for the user.
-      
-      // Actual Firebase Auth user creation (highly simplified and problematic for client-side admin action):
-      // This is just to show intent from Flutter code. A real app needs Firebase Functions.
-      let newAdminUID;
+      // Firebase Auth user creation part (conceptual as client-side admin creation is complex)
       try {
-        // This is a placeholder, in real scenario, this will sign in the new user.
         // const newUserCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
         // newAdminUID = newUserCredential.user.uid;
-        // await firebaseSignOut(auth); // Sign out the newly created user
-        // Re-sign in super admin - this is the problematic part of restoring state cleanly
+        // await firebaseSignOut(auth); 
         // await signInWithEmailAndPassword(auth, superAdminUser.email, values.superAdminPassword);
         
-        // Simplified for client-side: We'll use a Firestore-generated ID for the admin document.
-        // And assume Auth user is handled elsewhere or this is just profile creation.
-        // Since the prompt is insistent on porting functionality, we will inform the user about this part.
-        // For this exercise, we will skip actual Firebase Auth user creation and focus on Firestore document.
-        // The user will need to manually create the auth user or use Functions.
-        
-        // Let's mock a UID for Firestore document.
-        newAdminUID = doc(collection(db, "admins")).id; // Firestore auto-ID
+        // For this exercise, we generate a Firestore document ID. 
+        // Actual Auth user creation should be handled via Firebase Functions or a separate user invite flow.
+        const adminDocRef = doc(collection(db, "admins"));
+        newAdminUID = adminDocRef.id;
         
          toast({
           title: "Admin Profile Data Ready",
@@ -179,17 +106,22 @@ export function AddAdminForm() {
         });
 
       } catch (authError: any) {
-        // This block would catch errors from createUserWithEmailAndPassword if it were called.
-        console.error("Error creating admin in Firebase Auth:", authError);
-        setErrorMessage(`Auth Error: ${authError.message}. Note: Admin user creation from client by another admin is complex.`);
+        console.error("Error during conceptual admin auth creation step:", authError);
+        setErrorMessage(`Auth Setup Error: ${authError.message}. Note: Admin user creation from client by another admin is complex and not fully implemented here.`);
         setIsLoading(false);
         return;
       }
 
+      if (!newAdminUID) {
+        // This case should ideally not be reached if the above try/catch returns on error.
+        setErrorMessage("Failed to generate admin ID.");
+        setIsLoading(false);
+        return;
+      }
 
       await addAdminToFirestore(newAdminUID, {
         name: values.name,
-        email: values.email, // Password is not stored in Firestore
+        email: values.email, 
         mobile: values.mobile,
         address: values.address,
         company: values.company,
@@ -203,8 +135,7 @@ export function AddAdminForm() {
         title: "Admin Profile Created",
         description: `${values.name} has been added to Firestore. Ensure Firebase Auth user is also created.`,
       });
-      form.reset();
-      // Consider redirecting or clearing form
+      form.reset(); // This will now use defaultValues where selectedCompany is ""
     } catch (error: any) {
       console.error("Failed to add admin:", error);
       let message = "Failed to add admin. Please try again.";
@@ -327,7 +258,7 @@ export function AddAdminForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Parent Company</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}> {/* Changed defaultValue to value */}
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select parent company" />
@@ -426,3 +357,5 @@ export function AddAdminForm() {
     </Card>
   );
 }
+
+    
