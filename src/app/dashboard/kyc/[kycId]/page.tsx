@@ -8,7 +8,11 @@ import type { KYC, KycPersonalInfo, KycProfessionalInfo, KycBankInfo, KycDocumen
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, AlertTriangle, User, Briefcase, Banknote, FileArchive, CheckCircle, XCircle, Edit3, HelpCircle, Fingerprint, BookUser, Hash, SmartphoneNfc, ScanFace, CalendarOff, CircleUser, CreditCard } from 'lucide-react';
+import { 
+    ArrowLeft, Loader2, AlertTriangle, User, Briefcase, Banknote, FileArchive, 
+    CheckCircle, XCircle, HelpCircle, Fingerprint, BookUser, Hash, SmartphoneNfc, 
+    ScanFace, CalendarOff, CircleUser, CreditCard, Mail, Phone, MapPin, CalendarDays, Cake, MapIcon as Map
+} from 'lucide-react'; // Added Mail, Phone, MapPin, CalendarDays, Cake, Map
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -171,17 +175,19 @@ export default function KycDetailPage() {
         <CardContent className="p-6">
           <SectionTitle title="Personal Information" icon={User} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-            <InfoItem label="Full Name" value={pInfo.name} />
-            <InfoItem label="Date of Birth" value={pInfo.dob} />
-            <InfoItem label="Gender" value={pInfo.gender} />
-            <InfoItem label="Father's Name" value={pInfo.father_name} />
-            <InfoItem label="Mother's Name" value={pInfo.mother_name} />
-            <InfoItem label="Mobile Number" value={pInfo.mobile} />
-            <InfoItem label="Alternate Mobile" value={pInfo.alt_mobile} />
-            <InfoItem label="Email" value={pInfo.email} />
-            <InfoItem label="Marital Status" value={pInfo.marital_status} />
-            <InfoItem label="Permanent Address" value={pInfo.permanent_address} />
-            <InfoItem label="Current Address" value={pInfo.current_address} />
+            <InfoItem label="Prefix" value={pInfo.prefix} icon={User}/>
+            <InfoItem label="Full Name" value={pInfo.name} icon={User}/>
+            <InfoItem label="Father/Husband Name" value={pInfo.father_name} icon={User}/>
+            <InfoItem label="Date of Birth" value={pInfo.dob ? (typeof pInfo.dob === 'string' && !isNaN(Date.parse(pInfo.dob)) ? new Date(pInfo.dob) : pInfo.dob) : undefined} icon={CalendarDays}/>
+            <InfoItem label="Age" value={pInfo.age} icon={Cake}/>
+            <InfoItem label="Gender" value={pInfo.gender} icon={User}/>
+            <InfoItem label="Marital Status" value={pInfo.marital_status} icon={User}/>
+            <InfoItem label="Phone" value={pInfo.mobile} icon={Phone}/>
+            <InfoItem label="Alternative Phone" value={pInfo.alt_mobile} icon={Phone}/>
+            <InfoItem label="Email" value={pInfo.email} icon={Mail}/>
+            <InfoItem label="Address" value={pInfo.address} icon={MapPin}/>
+            <InfoItem label="Pincode" value={pInfo.pincode} icon={Hash}/>
+            <InfoItem label="State" value={pInfo.state} icon={Map}/>
           </div>
 
           <Separator className="my-6" />
@@ -190,16 +196,14 @@ export default function KycDetailPage() {
             <InfoItem label="Company Name" value={profInfo.company_name} />
             <InfoItem label="Designation" value={profInfo.designation} />
             <InfoItem label="Department" value={profInfo.department} />
-            <InfoItem label="Employee ID" value={profInfo.employee_id} />
-            <InfoItem label="Joining Date" value={profInfo.joining_date ? (typeof profInfo.joining_date === 'string' ? new Date(profInfo.joining_date) : profInfo.joining_date as Date) : undefined} />
+            <InfoItem label="Date of Joining" value={profInfo.joining_date ? (typeof profInfo.joining_date === 'string' && !isNaN(Date.parse(profInfo.joining_date)) ? new Date(profInfo.joining_date) : profInfo.joining_date) : undefined} icon={CalendarDays} />
             <InfoItem label="PAN Number" value={profInfo.pan_number} icon={CreditCard} />
             <InfoItem label="Education" value={profInfo.education} icon={BookUser} />
             <InfoItem label="ESIC Number" value={profInfo.esic_number} icon={Hash} />
             <InfoItem label="Mobile Linked to Aadhar" value={profInfo.mobile_linked_to_aadhar} icon={SmartphoneNfc} />
             <InfoItem label="Name as per Aadhar" value={profInfo.name_as_per_aadhar} icon={ScanFace} />
-            <InfoItem label="Date of Exit" value={profInfo.date_of_exit ? (typeof profInfo.date_of_exit === 'string' ? new Date(profInfo.date_of_exit) : profInfo.date_of_exit as Date) : undefined} icon={CalendarOff} />
             <InfoItem label="UAN Number" value={profInfo.uan_number} icon={CircleUser} />
-            <InfoItem label="Aadhar Number" value={profInfo.aadhar_number} />
+            <InfoItem label="Aadhar Number" value={profInfo.aadhar_number} icon={Fingerprint} />
           </div>
 
           <Separator className="my-6" />
@@ -241,7 +245,7 @@ export default function KycDetailPage() {
                     Mark as Verified
                 </Button>
             ) : null}
-            {kyc.status !== 'rejected' ? ( // Show "Mark as Rejected" if not already rejected (i.e., if pending or verified)
+            {kyc.status !== 'rejected' ? ( 
                  <Button 
                     variant="destructive" 
                     onClick={() => mutation.mutate(false)} 

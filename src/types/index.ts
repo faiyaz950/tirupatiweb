@@ -1,3 +1,4 @@
+
 import type { Timestamp } from 'firebase/firestore';
 
 export interface UserProfile {
@@ -26,43 +27,45 @@ export interface Admin {
 }
 
 export interface KycPersonalInfo {
-  name?: string;
-  dob?: string; // Date of Birth
-  gender?: string;
-  father_name?: string;
-  mother_name?: string;
-  mobile?: string;
-  alt_mobile?: string;
-  email?: string;
-  marital_status?: string;
-  permanent_address?: string;
-  current_address?: string;
-  // ... any other personal fields
+  name?: string; // NAME
+  prefix?: string; // PREFIX
+  dob?: string; // DATE OF BIRTH
+  age?: string; // AGE
+  gender?: string; // GENDER
+  father_name?: string; // FATHER HUSBAND NAME (assuming father_name)
+  mobile?: string; // PHONE
+  alt_mobile?: string; // ALTERNATIVE PHONE
+  email?: string; // EMAIL
+  marital_status?: string; // MARITAL STATUS
+  address?: string; // ADDRESS
+  pincode?: string; // PINCODE
+  state?: string; // STATE
+  // mother_name removed
+  // permanent_address removed
+  // current_address removed
 }
 
 export interface KycProfessionalInfo {
-  company_name?: string;
-  designation?: string;
-  department?: string;
-  employee_id?: string;
-  joining_date?: string; // Date as string or Date object
-  pan_number?: string;
-  education?: string;
-  esic_number?: string;
-  mobile_linked_to_aadhar?: string;
-  name_as_per_aadhar?: string;
-  date_of_exit?: string; // Date as string or Date object
-  uan_number?: string;
-  aadhar_number?: string;
-  // ... any other professional fields
+  company_name?: string; // COMPANY NAME
+  designation?: string; // DESIGNATION
+  department?: string; // DEPARTMENT
+  joining_date?: string; // GvDATE OF JOINING (Date as string or Date object)
+  pan_number?: string; // PAN NUMBER
+  education?: string; // EDUCATION
+  esic_number?: string; // ESIC NUMBER
+  mobile_linked_to_aadhar?: string; // MOBILE LINKED TO AADHAR
+  name_as_per_aadhar?: string; // NAME AS PER AADHAR
+  uan_number?: string; // UAN NUMBER
+  aadhar_number?: string; // AADHAR NUMBER
+  // employee_id removed
+  // date_of_exit removed
 }
 
 export interface KycBankInfo {
-  bank_name?: string;
-  account_number?: string;
-  ifsc_code?: string;
-  branch_name?: string;
-  // ... any other bank fields
+  bank_name?: string; // BANK NAME
+  account_number?: string; // ACCOUNT NUMBER
+  ifsc_code?: string; // IFSC CODE
+  branch_name?: string; // BRANCH NAME
 }
 
 export interface KycDocumentInfo {
@@ -97,3 +100,4 @@ export interface SuperAdminProfile {
   address?: string;
   createdAt: Timestamp | Date | string;
 }
+
