@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { 
     ArrowLeft, Loader2, AlertTriangle, User, Briefcase, Banknote, FileArchive, 
     CheckCircle, XCircle, HelpCircle, BookUser, Hash, SmartphoneNfc, 
-    ScanFace, CalendarDays, Cake, MapPin, CreditCard, Mail, Phone, Home, UserSquare, Landmark, Edit3, CalendarCheck2, UserCircle as UserCircleIcon, Users // Added Users here
+    ScanFace, CalendarDays, Cake, MapPin, CreditCard, Mail, Phone, Home, UserSquare, Landmark, Edit3, CalendarCheck2, UserCircle as UserCircleIcon, Users
 } from 'lucide-react'; 
 import { format, parseISO } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
@@ -47,9 +47,10 @@ const InfoItem = ({ label, value, capitalize = false, icon: Icon, isDate = false
       }
     }
   }
-  else if (value) {
+  else if (value) { // This handles non-empty strings, numbers (including 0). Empty strings "" will result in 'N/A'.
     displayValue = capitalize ? (String(value).charAt(0).toUpperCase() + String(value).slice(1)) : String(value);
   }
+
 
   return (
     <div className="grid grid-cols-3 gap-2 py-1.5 items-start">
@@ -308,7 +309,7 @@ export default function KycDetailPage() {
             <InfoItem label="Designation" value={profInfo.designation} icon={UserSquare} />
             <InfoItem label="Education" value={profInfo.education} icon={BookUser} />
             <InfoItem label="Date of Joining" value={profInfo.joining_date} icon={CalendarDays} isDate={true} />
-            <InfoItem label="Aadhar Number" value={profInfo.aadhar_number} icon={CreditCard} /> {/* Changed Icon from Fingerprint */}
+            <InfoItem label="Aadhar Number" value={profInfo.aadhar_number} icon={CreditCard} />
             <InfoItem label="Name as per Aadhar" value={profInfo.name_as_per_aadhar} icon={ScanFace} />
             <InfoItem label="PAN Number" value={profInfo.pan_number} icon={CreditCard} />
             <InfoItem label="UAN Number" value={profInfo.uan_number} icon={Hash} />
@@ -363,7 +364,7 @@ export default function KycDetailPage() {
                     Mark as Rejected
                 </Button>
             ): null}
-             {kyc.status === 'verified' || kyc.status === 'rejected' ? ( // Show pending only if already verified or rejected
+             {kyc.status === 'verified' || kyc.status === 'rejected' ? ( 
                 <Button 
                     variant="outline" 
                     onClick={() => mutation.mutate('pending')} 
@@ -379,7 +380,5 @@ export default function KycDetailPage() {
     </div>
   );
 }
-
-    
 
     

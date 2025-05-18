@@ -108,8 +108,10 @@ export const getAllKycRecords = async (filters: { searchQuery?: string; status?:
   let q = query(kycCollectionRef);
 
   if (filters.status) {
-    const verifiedStatus = filters.status === 'verified';
-    q = query(kycCollectionRef, where('verified', '==', verifiedStatus));
+    // const verifiedStatus = filters.status === 'verified'; // This was a bit restrictive
+    // q = query(kycCollectionRef, where('verified', '==', verifiedStatus));
+    // Better to filter on the actual status string if that's how it's stored
+     q = query(kycCollectionRef, where('status', '==', filters.status));
   }
   
   const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
@@ -119,11 +121,13 @@ export const getAllKycRecords = async (filters: { searchQuery?: string; status?:
     ...parseTimestamps(doc.data()),
   })) as KYC[];
 
+  // Client-side search after fetching (can be slow for large datasets)
   if (filters.searchQuery) {
     const searchQueryLower = filters.searchQuery.toLowerCase();
     kycDocs = kycDocs.filter(kyc => {
       const name = kyc.personal_info?.name?.toLowerCase() || '';
       const companyName = kyc.professional_info?.company_name?.toLowerCase() || '';
+      // You might want to search other fields too like email, ID, etc.
       return name.includes(searchQueryLower) || companyName.includes(searchQueryLower);
     });
   }
@@ -136,8 +140,10 @@ export const getKycById = async (kycId: string): Promise<KYC | null> => {
   const docRef = doc(db, 'kyc', kycId);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
+    // console.log("KYC Document data:", docSnap.data()); // For debugging
     return { id: docSnap.id, ...parseTimestamps(docSnap.data()) } as KYC;
   }
+  // console.log("No KYC document found for ID:", kycId); // For debugging
   return null;
 };
 
@@ -145,6 +151,10 @@ export const updateKycRecord = async (kycId: string, data: Partial<KYC>): Promis
     const kycRef = doc(db, 'kyc', kycId);
     await updateDoc(kycRef, {
         ...data,
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(), // Ensure this field is also in your KYC type if you want to track it
+        verifiedAt: data.status === 'verified' ? serverTimestamp() : (data.status === 'rejected' || data.status === 'pending' ? null : undefined), // Set verifiedAt only if status becomes 'verified', or nullify/remove
     });
 };
+
+
+    
