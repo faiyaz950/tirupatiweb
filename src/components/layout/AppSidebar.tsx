@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Home, UserPlus, Users, FileText, UserCircle, LogOut, ShieldAlert, Settings } from "lucide-react";
+import { Home, UserPlus, Users, FileText, UserCircle, LogOut, Settings } from "lucide-react"; // Removed ShieldAlert as it's replaced
 import { useAuth } from "@/hooks/useAuth";
 import type { ReactNode } from "react";
 
@@ -53,7 +53,19 @@ export function AppSidebar({ children }: { children: ReactNode }) {
       <Sidebar collapsible="icon">
         <SidebarHeader className="p-4">
           <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
-            <ShieldAlert className="text-primary size-8 shrink-0" />
+            {/* Company Logo SVG */}
+            <svg width="36" height="31" viewBox="0 0 80 69" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
+              {/* Brown left part of V */}
+              <polygon points="0,0 39,0 30,54 0,54" fill="#604238" />
+              {/* Red right part of V */}
+              <polygon points="41,0 80,0 80,54 50,54" fill="#bc2c26" />
+              {/* White teardrop */}
+              <path d="M40,8 C35,25 35,45 40,52 C45,45 45,25 40,8 Z" fill="white"/>
+              {/* Red banner for text */}
+              <rect x="0" y="54" width="80" height="15" fill="#bc2c26" />
+              {/* Text TIRUPATI */}
+              <text x="40" y="61.5" font-family="Arial, Helvetica, sans-serif" font-size="9" fill="white" text-anchor="middle" font-weight="bold" dominant-baseline="central">TIRUPATI</text>
+            </svg>
             <div className="flex flex-col group-data-[collapsible=icon]:hidden">
               <span className="font-semibold text-lg text-sidebar-foreground">AdminPanelPro</span>
               <span className="text-xs text-sidebar-foreground/70">Super Admin</span>
