@@ -105,7 +105,7 @@ export default function SuperAdminDashboardPage() {
       <div className="flex flex-col h-full items-center justify-center text-center p-4">
         <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
         <h2 className="text-2xl font-semibold mb-2">Error Loading Profile</h2>
-        <p className="text-muted-foreground mb-4">Could not load Super Admin profile: {profileError.message}</p>
+        <p className="text-muted-foreground mb-4">Could not load Super Admin profile: ${profileError.message}</p>
         <Button onClick={() => queryClient.refetchQueries({ queryKey: ['superAdminProfile', user?.uid] })}>Retry</Button>
       </div>
     );
@@ -171,7 +171,7 @@ export default function SuperAdminDashboardPage() {
           /> */}
           <Card className="rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out hover:-translate-y-1.5 md:col-span-2 lg:col-span-1 flex flex-col">
             <CardHeader className="flex flex-row items-center space-x-4 pb-2">
-              <div className="p-3 rounded-full bg-destructive/10 text-destructive">
+              <div className="p-3 rounded-full bg-primary/10 text-primary"> {/* Changed from destructive */}
                 <LogOut className="h-6 w-6" />
               </div>
               <div>
@@ -182,7 +182,7 @@ export default function SuperAdminDashboardPage() {
               <p className="text-muted-foreground">Securely sign out of your account.</p>
             </CardContent>
             <CardContent className="pt-0">
-              <Button variant="destructive" className="w-full" onClick={signOut}>
+              <Button variant="outline" className="w-full" onClick={signOut}> {/* Changed from destructive */}
                 Sign Out
               </Button>
             </CardContent>
