@@ -11,8 +11,8 @@ import Link from 'next/link';
 import { 
     ArrowLeft, Loader2, AlertTriangle, User, Briefcase, Banknote, FileArchive, 
     CheckCircle, XCircle, HelpCircle, Fingerprint, BookUser, Hash, SmartphoneNfc, 
-    ScanFace, CalendarDays, Cake, MapPin, CreditCard, Mail, Phone, Home, UserSquare, Landmark, Edit3, CalendarCheck2, UserCircle
-} from 'lucide-react'; // Added Home, UserSquare, Landmark, Edit3, CalendarCheck2, UserCircle
+    ScanFace, CalendarDays, Cake, MapPin, CreditCard, Mail, Phone, Home, UserSquare, Landmark, Edit3, CalendarCheck2, UserCircle as UserCircleIcon
+} from 'lucide-react'; 
 import { format, parseISO } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -336,7 +336,7 @@ export default function KycDetailPage() {
           <Separator className="my-6" />
           <SectionTitle title="KYC Information & Status" icon={getStatusIcon()} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-            <InfoItem label="User ID" value={kyc.userId} icon={UserCircle} />
+            <InfoItem label="User ID" value={kyc.userId} icon={UserCircleIcon} />
             <InfoItem label="Current Status" value={kyc.status} capitalize icon={getStatusIcon()} />
             <InfoItem label="Submitted At" value={kyc.submittedAt ? (typeof kyc.submittedAt === 'string' ? parseISO(kyc.submittedAt) : kyc.submittedAt as Date) : undefined} icon={CalendarDays} isDate={true}/>
             {kyc.verifiedAt && <InfoItem label="Verified At" value={typeof kyc.verifiedAt === 'string' ? parseISO(kyc.verifiedAt) : kyc.verifiedAt as Date} icon={CalendarCheck2} isDate={true} />}
@@ -371,3 +371,5 @@ export default function KycDetailPage() {
   );
 }
 
+
+    
