@@ -17,7 +17,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from "@/components/ui/sheet"; // Added SheetHeader, SheetTitle
 import { Separator } from "@/components/ui/separator";
 import type { ReactNode } from 'react';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -178,6 +178,9 @@ export function AppSidebar({ children }: { children: ReactNode }) {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-[280px] p-0 border-r-0">
+            <SheetHeader className="sr-only"> {/* Visually hidden header for accessibility */}
+              <SheetTitle>Main Navigation Menu</SheetTitle>
+            </SheetHeader>
             <SidebarContentLayout isMobileSheet={true} />
           </SheetContent>
         </Sheet>
