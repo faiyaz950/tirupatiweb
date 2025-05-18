@@ -11,13 +11,14 @@ import Link from 'next/link';
 import { 
     ArrowLeft, Loader2, AlertTriangle, User, Briefcase, Banknote, FileArchive, 
     CheckCircle, XCircle, HelpCircle, Fingerprint, BookUser, Hash, SmartphoneNfc, 
-    ScanFace, CalendarOff, CircleUser, CreditCard, Mail, Phone, MapPin, CalendarDays, Cake, MapIcon as Map
-} from 'lucide-react'; // Added Mail, Phone, MapPin, CalendarDays, Cake, Map
-import { format } from 'date-fns';
+    ScanFace, CalendarDays, Cake, MapPin, CreditCard, Mail, Phone, Home, UserSquare, Landmark, Edit3, CalendarCheck2
+} from 'lucide-react'; // Added Home, UserSquare, Landmark, Edit3, CalendarCheck2
+import { format, parseISO } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
+import * as XLSX from 'xlsx'; // For Excel export
 
 const SectionTitle = ({ title, icon: Icon }: { title: string; icon: React.ElementType }) => (
   <div className="flex items-center space-x-2 mb-3 mt-4">
@@ -26,19 +27,36 @@ const SectionTitle = ({ title, icon: Icon }: { title: string; icon: React.Elemen
   </div>
 );
 
-const InfoItem = ({ label, value, capitalize = false, icon: Icon }: { label: string; value?: string | null | boolean | Date; capitalize?: boolean; icon?: React.ElementType }) => (
-  <div className="grid grid-cols-3 gap-2 py-1.5 items-start">
-    <span className="text-sm text-muted-foreground col-span-1 flex items-center">
-      {Icon && <Icon className="mr-2 h-4 w-4 text-muted-foreground" />}
-      {label}:
-    </span>
-    <span className="font-medium col-span-2 break-words">
-      {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : 
-       value instanceof Date ? format(value, "PPP") : 
-       (value ? (capitalize ? (value.charAt(0).toUpperCase() + value.slice(1)) : value) : 'N/A')}
-    </span>
-  </div>
-);
+const InfoItem = ({ label, value, capitalize = false, icon: Icon, isDate = false }: { label: string; value?: string | null | boolean | Date; capitalize?: boolean; icon?: React.ElementType, isDate?: boolean }) => {
+  let displayValue: string | React.ReactNode = 'N/A';
+  if (typeof value === 'boolean') {
+    displayValue = value ? 'Yes' : 'No';
+  } else if (value instanceof Date) {
+    displayValue = format(value, "PPP"); // Format: Jun 6, 2024
+  } else if (isDate && typeof value === 'string') {
+    try {
+      const date = parseISO(value); // Handles ISO strings like "1994-05-16T00:00:00.000Z" or "1994-05-16"
+      displayValue = format(date, "PPP");
+    } catch (e) {
+      displayValue = value; // If parsing fails, show original string
+    }
+  }
+  else if (value) {
+    displayValue = capitalize ? (String(value).charAt(0).toUpperCase() + String(value).slice(1)) : String(value);
+  }
+
+  return (
+    <div className="grid grid-cols-3 gap-2 py-1.5 items-start">
+      <span className="text-sm text-muted-foreground col-span-1 flex items-center">
+        {Icon && <Icon className="mr-2 h-4 w-4 text-muted-foreground shrink-0" />}
+        {label}:
+      </span>
+      <span className="font-medium col-span-2 break-words">
+        {displayValue}
+      </span>
+    </div>
+  );
+};
 
 const ImageViewer = ({ url, label }: {url?: string | null, label: string}) => {
     if (!url) return <InfoItem label={label} value="Not Provided" />;
@@ -69,7 +87,7 @@ export default function KycDetailPage() {
   const { toast } = useToast();
   const kycId = params.kycId as string;
 
-  const { data: kyc, isLoading, error } = useQuery<KYC | null>({
+  const { data: kyc, isLoading, error, refetch: refetchKyc } = useQuery<KYC | null>({
     queryKey: ['kyc', kycId],
     queryFn: () => getKycById(kycId),
     enabled: !!kycId,
@@ -79,13 +97,71 @@ export default function KycDetailPage() {
     mutationFn: (newStatus: boolean) => updateKycRecord(kycId, { verified: newStatus, status: newStatus ? 'verified' : 'rejected' }),
     onSuccess: (_, newStatus) => {
       queryClient.invalidateQueries({ queryKey: ['kyc', kycId] });
-      queryClient.invalidateQueries({ queryKey: ['kycRecords'] }); // To update the list page
+      queryClient.invalidateQueries({ queryKey: ['kycRecords'] });
       toast({ title: "KYC Status Updated", description: `KYC marked as ${newStatus ? 'Verified' : 'Rejected'}.` });
     },
     onError: (err: Error) => {
       toast({ title: "Update Failed", description: err.message, variant: "destructive" });
     }
   });
+
+  const handleExportSingleKyc = () => {
+    if (!kyc) {
+      toast({ title: "No Data", description: "KYC data not available for export.", variant: "default" });
+      return;
+    }
+    try {
+      const dataToExport = [{
+        "ID": kyc.id,
+        "User ID": kyc.userId,
+        "Name": kyc.personal_info?.name || 'N/A',
+        "Prefix": kyc.personal_info?.prefix || 'N/A',
+        "Gender": kyc.personal_info?.gender || 'N/A',
+        "Date of Birth": kyc.personal_info?.dob ? (typeof kyc.personal_info.dob === 'string' ? kyc.personal_info.dob.split('T')[0] : format(kyc.personal_info.dob as Date, "yyyy-MM-dd")) : 'N/A',
+        "Age": kyc.personal_info?.age || 'N/A',
+        "Marital Status": kyc.personal_info?.marital_status || 'N/A',
+        "Father/Husband Name": kyc.personal_info?.father_name || 'N/A',
+        "Phone": kyc.personal_info?.mobile || 'N/A',
+        "Alternative Phone": kyc.personal_info?.alt_mobile || 'N/A',
+        "Email": kyc.personal_info?.email || 'N/A',
+        "Address": kyc.personal_info?.address || 'N/A',
+        "Pincode": kyc.personal_info?.pincode || 'N/A',
+        "State": kyc.personal_info?.state || 'N/A',
+        "Company Name": kyc.professional_info?.company_name || 'N/A',
+        "Department": kyc.professional_info?.department || 'N/A',
+        "Designation": kyc.professional_info?.designation || 'N/A',
+        "Education": kyc.professional_info?.education || 'N/A',
+        "Date of Joining": kyc.professional_info?.joining_date ? (typeof kyc.professional_info.joining_date === 'string' ? kyc.professional_info.joining_date.split('T')[0] : format(kyc.professional_info.joining_date as Date, "yyyy-MM-dd")) : 'N/A',
+        "Aadhar Number": kyc.professional_info?.aadhar_number || 'N/A',
+        "Name as per Aadhar": kyc.professional_info?.name_as_per_aadhar || 'N/A',
+        "PAN Number": kyc.professional_info?.pan_number || 'N/A',
+        "UAN Number": kyc.professional_info?.uan_number || 'N/A',
+        "ESIC Number": kyc.professional_info?.esic_number || 'N/A',
+        "Mobile Linked to Aadhar": kyc.professional_info?.mobile_linked_to_aadhar || 'N/A',
+        "Account Number": kyc.bank_info?.account_number || 'N/A',
+        "Bank Name": kyc.bank_info?.bank_name || 'N/A',
+        "Branch Name": kyc.bank_info?.branch_name || 'N/A',
+        "IFSC Code": kyc.bank_info?.ifsc_code || 'N/A',
+        "Aadhar Card URL": kyc.document_info?.aadhar_card_url || 'N/A',
+        "PAN Card URL": kyc.document_info?.pan_card_url || 'N/A',
+        "Photo URL": kyc.document_info?.photo_url || 'N/A',
+        "KYC Status": kyc.status,
+        "Remarks": kyc.remarks || 'N/A',
+        "Submitted At": kyc.submittedAt ? (typeof kyc.submittedAt === 'string' ? kyc.submittedAt : format(kyc.submittedAt as Date, "yyyy-MM-dd HH:mm:ss")) : 'N/A',
+        "Verified At": kyc.verifiedAt ? (typeof kyc.verifiedAt === 'string' ? kyc.verifiedAt : format(kyc.verifiedAt as Date, "yyyy-MM-dd HH:mm:ss")) : 'N/A',
+        "Verified By": kyc.verifiedBy || 'N/A',
+      }];
+
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "KYC Detail");
+      XLSX.writeFile(workbook, `KYC_Detail_${kyc.personal_info?.name || kyc.id}.xlsx`);
+      toast({ title: "Export Successful", description: "KYC detail exported." });
+    } catch (e) {
+      toast({ title: "Export Failed", description: "Could not export KYC detail.", variant: "destructive" });
+      console.error("Export error:", e);
+    }
+  };
 
 
   if (isLoading) {
@@ -102,7 +178,7 @@ export default function KycDetailPage() {
         <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
         <h2 className="text-2xl font-semibold mb-2">Error Loading KYC</h2>
         <p className="text-muted-foreground mb-4">Could not load KYC data: {error.message}</p>
-        <Link href="/dashboard/kyc" passHref><Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4" /> Back to KYC List</Button></Link>
+        <Button variant="outline" onClick={() => refetchKyc()}><ArrowLeft className="mr-2 h-4 w-4" /> Retry or Go Back</Button>
       </div>
     );
   }
@@ -149,7 +225,7 @@ export default function KycDetailPage() {
   
   const getStatusIcon = () => {
     switch (kyc.status) {
-      case 'verified': return CheckCircle;
+      case 'verified': return CalendarCheck2;
       case 'rejected': return XCircle;
       case 'pending':
       default: return HelpCircle;
@@ -159,9 +235,14 @@ export default function KycDetailPage() {
 
   return (
     <div className="container mx-auto p-4 sm:p-6 md:p-8">
-      <Button variant="outline" asChild className="mb-6">
-        <Link href="/dashboard/kyc"><ArrowLeft className="mr-2 h-4 w-4" /> Back to KYC List</Link>
-      </Button>
+        <div className="mb-6 flex justify-between items-center">
+            <Button variant="outline" asChild>
+                <Link href="/dashboard/kyc"><ArrowLeft className="mr-2 h-4 w-4" /> Back to KYC List</Link>
+            </Button>
+            <Button variant="outline" onClick={handleExportSingleKyc}>
+                <FileArchive className="mr-2 h-4 w-4" /> Export this KYC to Excel
+            </Button>
+        </div>
       <Card className="shadow-xl">
         <CardHeader className="bg-muted/30 p-6 border-b">
           <div className="flex flex-col sm:flex-row justify-between items-start">
@@ -175,44 +256,44 @@ export default function KycDetailPage() {
         <CardContent className="p-6">
           <SectionTitle title="Personal Information" icon={User} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+            <InfoItem label="Name" value={pInfo.name} icon={User}/>
             <InfoItem label="Prefix" value={pInfo.prefix} icon={User}/>
-            <InfoItem label="Full Name" value={pInfo.name} icon={User}/>
-            <InfoItem label="Father/Husband Name" value={pInfo.father_name} icon={User}/>
-            <InfoItem label="Date of Birth" value={pInfo.dob ? (typeof pInfo.dob === 'string' && !isNaN(Date.parse(pInfo.dob)) ? new Date(pInfo.dob) : pInfo.dob) : undefined} icon={CalendarDays}/>
-            <InfoItem label="Age" value={pInfo.age} icon={Cake}/>
             <InfoItem label="Gender" value={pInfo.gender} icon={User}/>
+            <InfoItem label="Date of Birth" value={pInfo.dob} icon={CalendarDays} isDate={true}/>
+            <InfoItem label="Age" value={pInfo.age} icon={Cake}/>
             <InfoItem label="Marital Status" value={pInfo.marital_status} icon={User}/>
+            <InfoItem label="Father/Husband Name" value={pInfo.father_name} icon={UserSquare}/>
             <InfoItem label="Phone" value={pInfo.mobile} icon={Phone}/>
             <InfoItem label="Alternative Phone" value={pInfo.alt_mobile} icon={Phone}/>
             <InfoItem label="Email" value={pInfo.email} icon={Mail}/>
             <InfoItem label="Address" value={pInfo.address} icon={MapPin}/>
             <InfoItem label="Pincode" value={pInfo.pincode} icon={Hash}/>
-            <InfoItem label="State" value={pInfo.state} icon={Map}/>
+            <InfoItem label="State" value={pInfo.state} icon={Home}/>
           </div>
 
           <Separator className="my-6" />
           <SectionTitle title="Professional Information" icon={Briefcase} />
            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-            <InfoItem label="Company Name" value={profInfo.company_name} />
-            <InfoItem label="Designation" value={profInfo.designation} />
-            <InfoItem label="Department" value={profInfo.department} />
-            <InfoItem label="Date of Joining" value={profInfo.joining_date ? (typeof profInfo.joining_date === 'string' && !isNaN(Date.parse(profInfo.joining_date)) ? new Date(profInfo.joining_date) : profInfo.joining_date) : undefined} icon={CalendarDays} />
-            <InfoItem label="PAN Number" value={profInfo.pan_number} icon={CreditCard} />
+            <InfoItem label="Company Name" value={profInfo.company_name} icon={Landmark} />
+            <InfoItem label="Department" value={profInfo.department} icon={Briefcase} />
+            <InfoItem label="Designation" value={profInfo.designation} icon={UserSquare} />
             <InfoItem label="Education" value={profInfo.education} icon={BookUser} />
+            <InfoItem label="Date of Joining" value={profInfo.joining_date} icon={CalendarDays} isDate={true} />
+            <InfoItem label="Aadhar Number" value={profInfo.aadhar_number} icon={Fingerprint} />
+            <InfoItem label="Name as per Aadhar" value={profInfo.name_as_per_aadhar} icon={ScanFace} />
+            <InfoItem label="PAN Number" value={profInfo.pan_number} icon={CreditCard} />
+            <InfoItem label="UAN Number" value={profInfo.uan_number} icon={Hash} />
             <InfoItem label="ESIC Number" value={profInfo.esic_number} icon={Hash} />
             <InfoItem label="Mobile Linked to Aadhar" value={profInfo.mobile_linked_to_aadhar} icon={SmartphoneNfc} />
-            <InfoItem label="Name as per Aadhar" value={profInfo.name_as_per_aadhar} icon={ScanFace} />
-            <InfoItem label="UAN Number" value={profInfo.uan_number} icon={CircleUser} />
-            <InfoItem label="Aadhar Number" value={profInfo.aadhar_number} icon={Fingerprint} />
           </div>
 
           <Separator className="my-6" />
           <SectionTitle title="Bank Information" icon={Banknote} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-            <InfoItem label="Bank Name" value={bankInfo.bank_name} />
-            <InfoItem label="Account Number" value={bankInfo.account_number} />
-            <InfoItem label="IFSC Code" value={bankInfo.ifsc_code} />
-            <InfoItem label="Branch Name" value={bankInfo.branch_name} />
+            <InfoItem label="Account Number" value={bankInfo.account_number} icon={CreditCard} />
+            <InfoItem label="Bank Name" value={bankInfo.bank_name} icon={Landmark} />
+            <InfoItem label="Branch Name" value={bankInfo.branch_name} icon={Home} />
+            <InfoItem label="IFSC Code" value={bankInfo.ifsc_code} icon={Hash} />
           </div>
 
           <Separator className="my-6" />
@@ -228,10 +309,10 @@ export default function KycDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
             <InfoItem label="User ID" value={kyc.userId} icon={Fingerprint} />
             <InfoItem label="Current Status" value={kyc.status} capitalize={true} />
-            <InfoItem label="Submitted At" value={kyc.submittedAt ? (typeof kyc.submittedAt === 'string' ? new Date(kyc.submittedAt) : kyc.submittedAt as Date) : undefined} />
-            {kyc.verifiedAt && <InfoItem label="Verified At" value={typeof kyc.verifiedAt === 'string' ? new Date(kyc.verifiedAt) : kyc.verifiedAt as Date} />}
-            {kyc.verifiedBy && <InfoItem label="Verified By (Admin ID)" value={kyc.verifiedBy} />}
-            <InfoItem label="Remarks" value={kyc.remarks} />
+            <InfoItem label="Submitted At" value={kyc.submittedAt ? (typeof kyc.submittedAt === 'string' ? parseISO(kyc.submittedAt) : kyc.submittedAt as Date) : undefined} icon={CalendarDays}/>
+            {kyc.verifiedAt && <InfoItem label="Verified At" value={typeof kyc.verifiedAt === 'string' ? parseISO(kyc.verifiedAt) : kyc.verifiedAt as Date} icon={CalendarCheck2} />}
+            {kyc.verifiedBy && <InfoItem label="Verified By" value={kyc.verifiedBy} icon={UserSquare} />}
+            <InfoItem label="Remarks" value={kyc.remarks} icon={Edit3} />
           </div>
         </CardContent>
         <CardFooter className="p-6 border-t flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
@@ -261,3 +342,5 @@ export default function KycDetailPage() {
   );
 }
 
+
+    
