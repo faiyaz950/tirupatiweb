@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Home, UserPlus, Users, FileText, UserCircle, LogOut, Settings } from "lucide-react"; // Removed ShieldAlert as it's replaced
+import { Home, UserPlus, Users, FileText, UserCircle, LogOut, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import type { ReactNode } from "react";
 
@@ -64,7 +64,7 @@ export function AppSidebar({ children }: { children: ReactNode }) {
               {/* Red banner for text */}
               <rect x="0" y="54" width="80" height="15" fill="#bc2c26" />
               {/* Text TIRUPATI */}
-              <text x="40" y="61.5" font-family="Arial, Helvetica, sans-serif" font-size="9" fill="white" text-anchor="middle" font-weight="bold" dominant-baseline="central">TIRUPATI</text>
+              <text x="40" y="61.5" fontFamily="Arial, Helvetica, sans-serif" fontSize="9" fill="white" textAnchor="middle" fontWeight="bold" dominantBaseline="central">TIRUPATI</text>
             </svg>
             <div className="flex flex-col group-data-[collapsible=icon]:hidden">
               <span className="font-semibold text-lg text-sidebar-foreground">AdminPanelPro</span>
@@ -148,4 +148,3 @@ function AppHeader() {
     </header>
   );
 }
-
