@@ -61,12 +61,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(null);
           setSuperAdminProfile(null);
           setIsSuperAdmin(false);
-          if (pathname !== '/login') {
-            router.push('/login?error=authFailed');
+          if (pathname !== '/') { // Check against root path for login
+            router.push('/?error=authFailed'); // Redirect to root with error
           }
         }
 
-        if (pathname === '/login' && isAdmin) {
+        if (pathname === '/' && isAdmin) { // If on login page (root) and is admin
           router.push('/dashboard');
         }
 
@@ -74,8 +74,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         setSuperAdminProfile(null);
         setIsSuperAdmin(false);
-        if (pathname !== '/login' && !pathname.startsWith('/public')) { // Add any public routes here
-          router.push('/login');
+        if (pathname !== '/' && !pathname.startsWith('/public')) { // Add any public routes here
+          router.push('/'); // Redirect to root for login
         }
       }
       setLoading(false);
@@ -91,7 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
       setSuperAdminProfile(null);
       setIsSuperAdmin(false);
-      router.push('/login');
+      router.push('/'); // Redirect to root for login
     } catch (error) {
       console.error("Error signing out: ", error);
       // Optionally show a toast message for error
@@ -114,3 +114,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
