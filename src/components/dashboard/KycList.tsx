@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Loader2, FileText, AlertTriangle, Search, Filter, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, FileText, AlertTriangle, Search, Filter, CheckCircle, XCircle, HelpCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { KycExportButton } from './KycExportButton';
 // import { formatDistanceToNow } from 'date-fns'; // No longer needed here
@@ -21,7 +21,8 @@ import { KycExportButton } from './KycExportButton';
 const statusOptions = [
   { value: 'all', label: 'All Statuses' },
   { value: 'verified', label: 'Verified' },
-  { value: 'unverified', label: 'Unverified' }, // This typically means pending or rejected
+  { value: 'pending', label: 'Pending' },
+  { value: 'rejected', label: 'Rejected' },
 ];
 
 export function KycList() {
@@ -143,8 +144,13 @@ export function KycList() {
                         "bg-yellow-500 hover:bg-yellow-600 text-white" // For pending
                       }
                     >
-                      {kyc.status === 'verified' ? <CheckCircle className="mr-1 h-3.5 w-3.5" /> : kyc.status === 'rejected' ? <XCircle className="mr-1 h-3.5 w-3.5" /> : <XCircle className="mr-1 h-3.5 w-3.5" /> /* Consider a pending icon */}
-                      {kyc.status.charAt(0).toUpperCase() + kyc.status.slice(1)}
+                      {kyc.status === 'verified' && <CheckCircle className="mr-1 h-3.5 w-3.5" />}
+                      {kyc.status === 'rejected' && <XCircle className="mr-1 h-3.5 w-3.5" />}
+                      {kyc.status === 'pending' && <HelpCircle className="mr-1 h-3.5 w-3.5" />}
+                      {kyc.status && typeof kyc.status === 'string' 
+                        ? kyc.status.charAt(0).toUpperCase() + kyc.status.slice(1)
+                        : 'N/A'
+                      }
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -162,3 +168,5 @@ export function KycList() {
     </Card>
   );
 }
+
+    
