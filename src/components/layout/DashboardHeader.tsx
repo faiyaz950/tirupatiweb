@@ -71,7 +71,7 @@ export function DashboardHeader() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 shadow-md bg-gradient-to-r from-primary via-red-500 to-accent">
+    <header className="fixed top-0 left-0 right-0 z-50 shadow-md bg-gradient-to-r from-primary via-red-500 to-red-300">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo and App Name */}
@@ -122,7 +122,7 @@ export function DashboardHeader() {
                     <span className="sr-only">Open menu</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[280px] bg-gradient-to-br from-primary via-red-600 to-accent p-0 text-primary-foreground">
+                <SheetContent side="left" className="w-[280px] bg-gradient-to-br from-primary via-red-600 to-red-300 p-0 text-primary-foreground">
                   <div className="p-4">
                     <Link href="/dashboard" className="flex items-center gap-2 mb-4">
                        <svg width="32" height="27" viewBox="0 0 80 69" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
