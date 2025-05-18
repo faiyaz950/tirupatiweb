@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { 
     Loader2, FileText, AlertTriangle, Search, Filter, 
-    CheckCircle, XCircle, HelpCircle, Eye, Building, User 
+    CheckCircle, XCircle, HelpCircle, Eye, Building, User, UserCheck
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { KycExportButton } from './KycExportButton';
@@ -156,14 +156,21 @@ export function KycList() {
                   </Avatar>
                   <div>
                     <CardTitle className="text-xl font-bold truncate" title={kyc.personal_info?.name || 'N/A'}>{kyc.personal_info?.name || 'N/A'}</CardTitle>
-                    <CardDescription className="text-sm text-muted-foreground">User ID: {kyc.userId || 'N/A'}</CardDescription>
+                    <CardDescription className="text-sm text-muted-foreground mt-0.5 min-h-[1.25rem]"> {/* min-h to reduce layout shift */}
+                      {kyc.status === 'verified' && kyc.verifiedBy ? (
+                        <span className="flex items-center">
+                          <UserCheck className="mr-1.5 h-4 w-4 text-green-500" />
+                          Verified By: <span className="font-semibold ml-1">{kyc.verifiedBy}</span>
+                        </span>
+                      ) : null}
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-5 space-y-3 flex-grow">
                 <KycCardInfoItem icon={Building} label="Company" value={kyc.professional_info?.company_name} />
                 <div className="flex items-center space-x-2 text-sm">
-                  <User className="h-4 w-4 text-muted-foreground shrink-0" /> {/* Using User as a generic status icon placeholder before badge */}
+                  <User className="h-4 w-4 text-muted-foreground shrink-0" />
                   <div>
                      <span className="text-muted-foreground">Status: </span>
                      {getStatusBadge(kyc.status)}
