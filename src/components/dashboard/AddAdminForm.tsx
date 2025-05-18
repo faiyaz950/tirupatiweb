@@ -65,7 +65,7 @@ export function AddAdminForm() {
       department: "",
       designation: "",
       availability: "",
-      selectedCompany: "", // Changed from undefined to ""
+      selectedCompany: "", 
       superAdminPassword: "",
     },
   });
@@ -87,15 +87,7 @@ export function AddAdminForm() {
       const credential = EmailAuthProvider.credential(superAdminUser.email, values.superAdminPassword);
       await reauthenticateWithCredential(auth.currentUser!, credential);
       
-      // Firebase Auth user creation part (conceptual as client-side admin creation is complex)
       try {
-        // const newUserCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-        // newAdminUID = newUserCredential.user.uid;
-        // await firebaseSignOut(auth); 
-        // await signInWithEmailAndPassword(auth, superAdminUser.email, values.superAdminPassword);
-        
-        // For this exercise, we generate a Firestore document ID. 
-        // Actual Auth user creation should be handled via Firebase Functions or a separate user invite flow.
         const adminDocRef = doc(collection(db, "admins"));
         newAdminUID = adminDocRef.id;
         
@@ -113,7 +105,6 @@ export function AddAdminForm() {
       }
 
       if (!newAdminUID) {
-        // This case should ideally not be reached if the above try/catch returns on error.
         setErrorMessage("Failed to generate admin ID.");
         setIsLoading(false);
         return;
@@ -135,7 +126,7 @@ export function AddAdminForm() {
         title: "Admin Profile Created",
         description: `${values.name} has been added to Firestore. Ensure Firebase Auth user is also created.`,
       });
-      form.reset(); // This will now use defaultValues where selectedCompany is ""
+      form.reset();
     } catch (error: any) {
       console.error("Failed to add admin:", error);
       let message = "Failed to add admin. Please try again.";
@@ -156,14 +147,14 @@ export function AddAdminForm() {
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full max-w-2xl mx-auto shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-2xl">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold">Add New Admin</CardTitle>
-        <CardDescription>Fill in the details to create a new admin account.</CardDescription>
+        <CardTitle className="text-3xl font-bold text-primary">Create New Administrator</CardTitle>
+        <CardDescription className="text-lg text-muted-foreground">Complete the form below to add a new admin user.</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6"> {/* Added pt-6 for better spacing after header */}
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8"> {/* Increased space-y for more breathing room */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
@@ -172,7 +163,7 @@ export function AddAdminForm() {
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Admin's full name" {...field} />
+                      <Input placeholder="Enter admin's full name" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -196,10 +187,10 @@ export function AddAdminForm() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>Set Password</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Input type={showPassword ? "text" : "password"} placeholder="Set a strong password" {...field} />
+                        <Input type={showPassword ? "text" : "password"} placeholder="Create a strong password" {...field} />
                         <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setShowPassword(!showPassword)}>
                           {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </Button>
@@ -216,7 +207,7 @@ export function AddAdminForm() {
                   <FormItem>
                     <FormLabel>Mobile Number</FormLabel>
                     <FormControl>
-                      <Input type="tel" placeholder="Admin's mobile number" {...field} />
+                      <Input type="tel" placeholder="Enter mobile number" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -229,9 +220,9 @@ export function AddAdminForm() {
               name="address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Address</FormLabel>
+                  <FormLabel>Residential Address</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Admin's full address" {...field} />
+                    <Textarea placeholder="Enter admin's full address" {...field} rows={3} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -244,9 +235,9 @@ export function AddAdminForm() {
                 name="company"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Company Name (Assigned)</FormLabel>
+                    <FormLabel>Company Name (Assigned Branch/Site)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Tirupati Group HQ" {...field} />
+                      <Input placeholder="e.g., Tirupati Group - Pune Site" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -257,8 +248,8 @@ export function AddAdminForm() {
                 name="selectedCompany"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Parent Company</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}> {/* Changed defaultValue to value */}
+                    <FormLabel>Parent Company Entity</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select parent company" />
@@ -281,7 +272,7 @@ export function AddAdminForm() {
                   <FormItem>
                     <FormLabel>Department</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Operations" {...field} />
+                      <Input placeholder="e.g., Operations, HR" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -294,7 +285,7 @@ export function AddAdminForm() {
                   <FormItem>
                     <FormLabel>Designation</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Site Manager" {...field} />
+                      <Input placeholder="e.g., Site Manager, HR Executive" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -307,18 +298,18 @@ export function AddAdminForm() {
                 name="availability"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Availability</FormLabel>
+                    <FormLabel>Work Availability</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Full-Time, Part-Time (Mon-Fri)" {...field} />
+                      <Input placeholder="e.g., Full-Time, Part-Time (Mon-Fri, 9 AM - 5 PM)" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-            <div className="pt-4 border-t">
-              <FormLabel className="text-base font-semibold">Super Admin Verification</FormLabel>
-              <p className="text-sm text-muted-foreground mb-4">Enter your password to confirm this action.</p>
+            <div className="pt-6 border-t">
+              <FormLabel className="text-xl font-semibold text-primary">Super Admin Verification</FormLabel>
+              <p className="text-sm text-muted-foreground mb-4 mt-1">To confirm this action, please enter your Super Admin password.</p>
               <FormField
                   control={form.control}
                   name="superAdminPassword"
@@ -327,7 +318,7 @@ export function AddAdminForm() {
                       <FormLabel>Your Super Admin Password</FormLabel>
                       <FormControl>
                          <div className="relative">
-                          <Input type={showSuperAdminPassword ? "text" : "password"} placeholder="Your password" {...field} />
+                          <Input type={showSuperAdminPassword ? "text" : "password"} placeholder="Enter your password" {...field} />
                           <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setShowSuperAdminPassword(!showSuperAdminPassword)}>
                             {showSuperAdminPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                           </Button>
@@ -340,16 +331,12 @@ export function AddAdminForm() {
             </div>
             
             {errorMessage && (
-              <p className="text-sm font-medium text-destructive">{errorMessage}</p>
+              <p className="text-sm font-medium text-destructive p-3 bg-destructive/10 rounded-md">{errorMessage}</p>
             )}
 
-            <div className="text-yellow-600 bg-yellow-50 p-3 rounded-md text-sm">
-              <p><strong>Important Note:</strong> This form adds an admin profile to the database. For full access, the corresponding user account must also exist in Firebase Authentication. Creating Firebase Auth users by an admin typically requires Firebase Functions (Admin SDK) for security and proper auth state management. The password set here is for the new admin's account, if it were to be created via Auth.</p>
-            </div>
-
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Add Admin
+            <Button type="submit" className="w-full text-lg py-6" disabled={isLoading}> {/* Larger button */}
+              {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+              Create Admin Account
             </Button>
           </form>
         </Form>
@@ -357,5 +344,3 @@ export function AddAdminForm() {
     </Card>
   );
 }
-
-    
