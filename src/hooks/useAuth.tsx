@@ -30,7 +30,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        const isAdmin = firebaseUser.email === SUPER_ADMIN_EMAIL;
+        // Case-insensitive check for super admin email
+        const isAdmin = firebaseUser.email?.toLowerCase() === SUPER_ADMIN_EMAIL?.toLowerCase();
         setIsSuperAdmin(isAdmin);
 
         const userProfile: UserProfile = {
@@ -50,10 +51,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               setSuperAdminProfile(superAdminDoc.data() as SuperAdminProfile);
             } else {
               // Super admin doc might be created on first login logic in dashboard
-              console.warn("Super admin profile document not found.");
+              console.warn("Super admin profile document not found for UID:", firebaseUser.uid);
             }
           } catch (error) {
             console.error("Error fetching super admin profile:", error);
+          }
+          // If on login page (root) and is admin, redirect to dashboard
+          if (pathname === '/') { 
+            router.push('/dashboard');
           }
         } else {
            // If not super admin, sign out and redirect to login
@@ -61,28 +66,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(null);
           setSuperAdminProfile(null);
           setIsSuperAdmin(false);
-          if (pathname !== '/') { // Check against root path for login
-            router.push('/?error=authFailed'); // Redirect to root with error
+          // Only redirect if not already on the login page or a public page
+          if (pathname !== '/' && !pathname.startsWith('/public')) { 
+            router.push('/?error=authFailed'); 
           }
         }
-
-        if (pathname === '/' && isAdmin) { // If on login page (root) and is admin
-          router.push('/dashboard');
-        }
-
       } else {
         setUser(null);
         setSuperAdminProfile(null);
         setIsSuperAdmin(false);
-        if (pathname !== '/' && !pathname.startsWith('/public')) { // Add any public routes here
-          router.push('/'); // Redirect to root for login
+        // If not logged in and not on login page or public page, redirect to login
+        if (pathname !== '/' && !pathname.startsWith('/public')) { 
+          router.push('/'); 
         }
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [router, pathname]);
+  }, [router, pathname]); // Removed SUPER_ADMIN_EMAIL from dependency array as it's an env var, effectively constant per build
 
   const signOut = async () => {
     setLoading(true);
@@ -114,4 +116,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
