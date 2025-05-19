@@ -5,10 +5,20 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { AppSidebar } from '@/components/layout/AppSidebar'; // Use AppSidebar
+import { useEffect } from 'react'; // Import useEffect
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, loading, isSuperAdmin } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    // Only attempt to redirect if not loading and on the client side
+    if (!loading && typeof window !== 'undefined') {
+      if (!user || !isSuperAdmin) {
+        router.push('/?error=unauthorized');
+      }
+    }
+  }, [user, loading, isSuperAdmin, router]); // Add dependencies
 
   if (loading) {
     return (
@@ -19,10 +29,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  // If user is not authenticated or not a super admin, and we are waiting for useEffect to redirect
   if (!user || !isSuperAdmin) {
-    if (typeof window !== 'undefined') {
-      router.push('/?error=unauthorized');
-    }
     return (
        <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
