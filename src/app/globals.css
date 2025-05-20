@@ -10,96 +10,96 @@ body {
 @layer base {
   :root {
     --background: 0 0% 100%; /* White */
-    --foreground: 222 84% 5%; /* Very Dark Blue/Near Black */
+    --foreground: 0 0% 10%; /* Near Black */
     --card: 0 0% 100%; /* White */
-    --card-foreground: 222 84% 5%; /* Very Dark Blue/Near Black */
+    --card-foreground: 0 0% 10%; /* Near Black */
     --popover: 0 0% 100%; /* White */
-    --popover-foreground: 222 84% 5%; /* Very Dark Blue/Near Black */
+    --popover-foreground: 0 0% 10%; /* Near Black */
     
-    --primary: 217 91% 60%; /* Vibrant Blue */
+    --primary: 0 80% 55%; /* Vibrant Red */
     --primary-foreground: 0 0% 100%; /* White */
     
-    --secondary: 215 28% 95%; /* Very Light Blue/Gray */
-    --secondary-foreground: 215 30% 25%; /* Dark Blue for text on secondary */
+    --secondary: 0 0% 95%; /* Very Light Gray (from red hue) */
+    --secondary-foreground: 0 0% 25%; /* Dark Gray for text on secondary */
     
-    --muted: 215 28% 95%; /* Very Light Blue/Gray */
-    --muted-foreground: 215 25% 55%; /* Medium Blue/Gray for text on muted */
+    --muted: 0 0% 95%; /* Very Light Gray */
+    --muted-foreground: 0 0% 55%; /* Medium Gray for text on muted */
     
-    --accent: 200 95% 55%; /* Bright Blue (slightly different from primary) */
+    --accent: 0 70% 50%; /* Slightly different Red */
     --accent-foreground: 0 0% 100%; /* White */
     
-    --destructive: 0 84.2% 60.2%; /* Red (kept for destructive actions) */
+    --destructive: 0 84.2% 60.2%; /* Standard Red (kept for destructive actions) */
     --destructive-foreground: 0 0% 98%; /* White */
     
-    --border: 215 20% 85%; /* Light Blue/Gray border */
-    --input: 215 20% 85%; /* Light Blue/Gray input border */
-    --ring: 217 91% 60%; /* Primary blue for focus rings */
+    --border: 0 0% 85%; /* Light Gray border */
+    --input: 0 0% 85%; /* Light Gray input border */
+    --ring: 0 80% 55%; /* Primary red for focus rings */
 
-    --chart-1: 217 91% 60%; /* Blue */
-    --chart-2: 200 95% 55%; /* Accent Blue */
-    --chart-3: 210 80% 70%; /* Lighter Blue */
-    --chart-4: 225 70% 50%; /* Darker Blue */
-    --chart-5: 190 85% 65%; /* Cyan-ish Blue */
+    --chart-1: 0 80% 55%; /* Primary Red */
+    --chart-2: 0 70% 50%; /* Accent Red */
+    --chart-3: 0 85% 65%; /* Lighter/Brighter Red */
+    --chart-4: 15 80% 55%; /* Red-Orange */
+    --chart-5: 345 80% 60%; /* Pinkish-Red */
     
     --radius: 0.5rem;
 
     /* Sidebar specific theme variables */
-    --sidebar-background: hsl(var(--primary)); /* Fallback */
-    --sidebar-foreground: hsl(0 0% 100%); /* White text */
-    --sidebar-accent: hsl(210 100% 40%); /* Darker blue for hover */
+    --sidebar-background: hsl(var(--primary)); /* Fallback, will be overridden by gradient */
+    --sidebar-foreground: hsl(0 0% 100%); /* White text on red gradient */
+    --sidebar-accent: hsla(0, 0%, 100%, 0.15); /* Subtle white highlight for hover on red gradient */
     --sidebar-accent-foreground: hsl(0 0% 100%); /* White text on hover */
-    --sidebar-border: hsl(var(--primary) / 0.5);
+    --sidebar-border: hsl(var(--primary) / 0.5); /* Reddish border */
     --sidebar-ring: hsl(var(--primary));
 
     --sidebar-gradient-start-light: hsl(0, 0%, 100%); /* White */
-    --sidebar-gradient-end-light: hsl(var(--primary));   /* Primary Blue */
+    --sidebar-gradient-end-light: hsl(var(--primary));   /* Primary Red */
   }
 
   .dark {
-    --background: 224 71% 4%; /* Very Dark Blue/Almost Black */
+    --background: 0 0% 10%; /* Very Dark Gray/Almost Black */
     --foreground: 0 0% 98%; /* Off-White text */
     
-    --card: 224 71% 6%; /* Slightly lighter than background */
+    --card: 0 0% 13%; /* Slightly lighter than background */
     --card-foreground: 0 0% 98%;
     
-    --popover: 224 71% 4%;
+    --popover: 0 0% 10%;
     --popover-foreground: 0 0% 98%;
     
-    --primary: 217 91% 60%; /* Vibrant Blue (consistent with light mode) */
+    --primary: 0 80% 55%; /* Vibrant Red (consistent with light mode) */
     --primary-foreground: 0 0% 100%; /* White */
     
-    --secondary: 215 28% 15%; /* Dark Blue/Gray */
+    --secondary: 0 0% 20%; /* Dark Gray */
     --secondary-foreground: 0 0% 98%;
     
-    --muted: 215 28% 15%;
-    --muted-foreground: 215 20% 70%; /* Lighter Blue/Gray for muted text */
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 70%; /* Lighter Gray for muted text */
     
-    --accent: 200 95% 55%; /* Bright Blue (consistent) */
+    --accent: 0 70% 50%; /* Slightly different Red (consistent) */
     --accent-foreground: 0 0% 100%; /* White */
     
-    --destructive: 0 72% 51%; /* Slightly darker red for dark mode */
+    --destructive: 0 90% 65%; /* A very bright, distinct red for dark mode */
     --destructive-foreground: 0 0% 98%;
     
-    --border: 215 28% 20%; /* Darker Blue/Gray border */
-    --input: 215 28% 20%;
-    --ring: 217 91% 60%;
+    --border: 0 0% 25%; /* Darker Gray border */
+    --input: 0 0% 25%;
+    --ring: 0 80% 55%; /* Primary red */
 
-    --chart-1: 217 91% 60%;
-    --chart-2: 200 95% 55%;
-    --chart-3: 210 70% 50%;
-    --chart-4: 225 60% 40%;
-    --chart-5: 190 75% 45%;
+    --chart-1: 0 80% 55%;
+    --chart-2: 0 70% 50%;
+    --chart-3: 0 85% 65%;
+    --chart-4: 15 80% 55%;
+    --chart-5: 345 80% 60%;
 
     /* Sidebar specific theme variables for dark mode */
-    --sidebar-background: hsl(224 71% 6%);
+    --sidebar-background: hsl(0 0% 13%); /* Dark Gray, slightly lighter than page background */
     --sidebar-foreground: hsl(0 0% 95%);
-    --sidebar-accent: hsl(215 28% 20%);
+    --sidebar-accent: hsl(0 60% 30%); /* Darker Red for hover in dark mode */
     --sidebar-accent-foreground: hsl(0 0% 98%);
-    --sidebar-border: hsl(215 28% 15% / 0.5);
+    --sidebar-border: hsl(0 0% 20% / 0.5);
     --sidebar-ring: hsl(var(--primary));
 
-    --sidebar-gradient-start-dark: hsl(220, 40%, 10%); /* Darker blue */
-    --sidebar-gradient-end-dark: hsl(220, 40%, 5%);   /* Even darker blue */
+    --sidebar-gradient-start-dark: hsl(0, 10%, 15%); /* Dark Gray */
+    --sidebar-gradient-end-dark: hsl(0, 10%, 10%);   /* Even darker Gray */
   }
 }
 
@@ -127,3 +127,4 @@ body {
     @apply bg-gradient-to-b from-[var(--sidebar-gradient-start-dark)] to-[var(--sidebar-gradient-end-dark)];
   }
 }
+
