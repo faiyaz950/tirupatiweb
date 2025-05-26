@@ -180,7 +180,6 @@ export default function KycDetailPage() {
       const pInfo = kyc.personal_info || {};
       const profInfo = kyc.professional_info || {};
       const bankInfo = kyc.bank_info || {};
-      // const docInfo = kyc.document_info || {}; // Not needed if not exporting URLs
 
       const dataToExport = [{
         "ID": kyc.id || 'N/A',
@@ -205,7 +204,6 @@ export default function KycDetailPage() {
         "Designation": profInfo.designation || 'N/A',
         "Education": profInfo.education || 'N/A',
         "Date of Joining": profInfo.date_of_joining || 'N/A',
-        // "Date of Exit": profInfo.date_of_exit || 'N/A', // Removed
         "Aadhar Number": profInfo.aadhar_number || 'N/A',
         "Name as per Aadhar": profInfo.name_as_per_aadhar || 'N/A',
         "PAN Number": profInfo.pan_number || 'N/A',
@@ -217,10 +215,6 @@ export default function KycDetailPage() {
         "Bank Name": bankInfo.bank_name || 'N/A',
         "Branch Name": bankInfo.branch_name || 'N/A',
         "IFSC Code": bankInfo.ifsc_code || 'N/A',
-        // Document Info - URLs removed
-        // "Aadhar Card URL": docInfo.aadhar_card_url || 'N/A',
-        // "PAN Card URL": docInfo.pan_card_url || 'N/A',
-        // "Photo URL": docInfo.photo_url || 'N/A',
         // KYC Status & Timestamps
         "KYC Status": kyc.status || 'N/A',
         "Remarks": kyc.remarks || 'N/A',
@@ -357,7 +351,7 @@ export default function KycDetailPage() {
             <InfoItem label="Designation" value={profInfo.designation} icon={UserSquare} />
             <InfoItem label="Education" value={profInfo.education} icon={BookUser} />
             <InfoItem label="Date of Joining" value={profInfo.date_of_joining} icon={CalendarDays} isDate={true} />
-            <InfoItem label="Date of Exit" value={profInfo.date_of_exit} icon={CalendarDays} isDate={true} />
+            {/* Date of Exit removed from display */}
             <InfoItem label="Aadhar Number" value={profInfo.aadhar_number} icon={CreditCard} />
             <InfoItem label="Name as per Aadhar" value={profInfo.name_as_per_aadhar} icon={ScanFace} />
             <InfoItem label="PAN Number" value={profInfo.pan_number} icon={CreditCard} />
@@ -431,3 +425,6 @@ export default function KycDetailPage() {
     </div>
   );
 }
+
+
+    
