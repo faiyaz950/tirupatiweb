@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { UserPlus, Users, FileText, UserCircle, LogOut, Loader2, AlertTriangle, Gauge, Settings, Download, Smartphone } from "lucide-react"; // Added Download and Smartphone icons
+import { UserPlus, Users, FileText, UserCircle, LogOut, Loader2, AlertTriangle, Gauge, Settings, Download, Smartphone } from "lucide-react";
 import { getSuperAdminProfile, createOrUpdateSuperAdminProfile } from "@/lib/firestore";
 import type { SuperAdminProfile } from "@/types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,9 +17,9 @@ interface DashboardCardProps {
   title: string;
   description: string;
   icon: React.ElementType;
-  href?: string; // Make href optional for cards that don't navigate
+  href?: string; 
   cta: string;
-  onClick?: () => void; // Add onClick for non-navigation actions
+  onClick?: () => void; 
 }
 
 function DashboardActionCard({ title, description, icon: Icon, href, cta, onClick }: DashboardCardProps) {
@@ -37,7 +37,7 @@ function DashboardActionCard({ title, description, icon: Icon, href, cta, onClic
         <p className="text-muted-foreground">{description}</p>
       </CardContent>
       <CardContent className="pt-0">
-         <Button className="w-full" onClick={onClick}> {/* Use generic onClick */}
+         <Button className="w-full" onClick={onClick} variant={title === "Log Out" ? "default" : "default"}>
             {cta}
           </Button>
       </CardContent>
@@ -56,8 +56,8 @@ export default function SuperAdminDashboardPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // APK Download Link Placeholder - **IMPORTANT: Replace this with your actual APK download URL**
-  const apkDownloadLink = "YOUR_APK_DOWNLOAD_LINK_HERE";
+  // **IMPORTANT: Replace this placeholder with your actual DIRECT APK download URL from your chosen hosting service**
+  const apkDownloadLink = "PASTE_YOUR_DIRECT_APK_DOWNLOAD_LINK_HERE";
 
   const { data: superAdminData, isLoading: isLoadingProfile, error: profileError } = useQuery<SuperAdminProfile | null>({
     queryKey: ['superAdminProfile', user?.uid],
@@ -194,16 +194,16 @@ export default function SuperAdminDashboardPage() {
               </CardDescription>
               <a
                 href={apkDownloadLink}
-                download="TirupatiGroupApp.apk" // Suggests a filename to the browser
-                target="_blank" // Opens in a new tab, good practice for downloads
+                download="TirupatiGroupApp.apk" 
+                target="_blank" 
                 rel="noopener noreferrer"
-                className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full sm:w-auto text-primary bg-primary-foreground hover:bg-primary-foreground/90 ${apkDownloadLink === "YOUR_APK_DOWNLOAD_LINK_HERE" ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full sm:w-auto text-primary bg-primary-foreground hover:bg-primary-foreground/90 ${apkDownloadLink === "PASTE_YOUR_DIRECT_APK_DOWNLOAD_LINK_HERE" ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onClick={(e) => {
-                  if (apkDownloadLink === "YOUR_APK_DOWNLOAD_LINK_HERE") {
+                  if (apkDownloadLink === "PASTE_YOUR_DIRECT_APK_DOWNLOAD_LINK_HERE") {
                     e.preventDefault();
                     toast({
-                      title: "Download Link Not Set",
-                      description: "The APK download link has not been configured yet.",
+                      title: "Download Link Not Ready",
+                      description: "The direct download link for the APK needs to be configured first by the admin.",
                       variant: "destructive"
                     });
                   }
@@ -212,9 +212,9 @@ export default function SuperAdminDashboardPage() {
                 <Download className="mr-2 h-5 w-5" />
                 Download APK
               </a>
-              {apkDownloadLink === "YOUR_APK_DOWNLOAD_LINK_HERE" && (
+              {apkDownloadLink === "PASTE_YOUR_DIRECT_APK_DOWNLOAD_LINK_HERE" && (
                 <p className="text-xs text-primary-foreground/70 mt-2">
-                  (Admin: Please replace placeholder link in the code with the actual APK URL.)
+                  (Admin: Please replace the placeholder link above with your actual direct APK download URL.)
                 </p>
               )}
             </CardContent>
@@ -224,5 +224,3 @@ export default function SuperAdminDashboardPage() {
     </div>
   );
 }
-
-    
