@@ -5,24 +5,25 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { UserPlus, Users, FileText, UserCircle, LogOut, Loader2, AlertTriangle, Gauge, Settings } from "lucide-react";
+import { UserPlus, Users, FileText, UserCircle, LogOut, Loader2, AlertTriangle, Gauge, Settings, Download, Smartphone } from "lucide-react"; // Added Download and Smartphone icons
 import { getSuperAdminProfile, createOrUpdateSuperAdminProfile } from "@/lib/firestore";
 import type { SuperAdminProfile } from "@/types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { WaveHeader } from "@/components/ui/wave-header"; // Import WaveHeader
+import { WaveHeader } from "@/components/ui/wave-header";
 
 interface DashboardCardProps {
   title: string;
   description: string;
   icon: React.ElementType;
-  href: string;
+  href?: string; // Make href optional for cards that don't navigate
   cta: string;
+  onClick?: () => void; // Add onClick for non-navigation actions
 }
 
-function DashboardActionCard({ title, description, icon: Icon, href, cta }: DashboardCardProps) {
-  return (
+function DashboardActionCard({ title, description, icon: Icon, href, cta, onClick }: DashboardCardProps) {
+  const content = (
     <Card className="rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out hover:-translate-y-1.5 flex flex-col">
       <CardHeader className="flex flex-row items-center space-x-4 pb-2">
         <div className="p-3 rounded-full bg-primary/10 text-primary">
@@ -36,12 +37,17 @@ function DashboardActionCard({ title, description, icon: Icon, href, cta }: Dash
         <p className="text-muted-foreground">{description}</p>
       </CardContent>
       <CardContent className="pt-0">
-         <Link href={href} passHref>
-          <Button className="w-full">{cta}</Button>
-        </Link>
+         <Button className="w-full" onClick={onClick}> {/* Use generic onClick */}
+            {cta}
+          </Button>
       </CardContent>
     </Card>
   );
+
+  if (href) {
+    return <Link href={href} passHref className="h-full flex flex-col">{content}</Link>;
+  }
+  return content;
 }
 
 
@@ -50,14 +56,17 @@ export default function SuperAdminDashboardPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // APK Download Link Placeholder - **IMPORTANT: Replace this with your actual APK download URL**
+  const apkDownloadLink = "YOUR_APK_DOWNLOAD_LINK_HERE";
+
   const { data: superAdminData, isLoading: isLoadingProfile, error: profileError } = useQuery<SuperAdminProfile | null>({
     queryKey: ['superAdminProfile', user?.uid],
     queryFn: async () => {
       if (!user?.uid) return null;
       let profile = await getSuperAdminProfile(user.uid);
-      if (!profile && user.email) { 
-        await createOrUpdateSuperAdminProfile(user.uid, { 
-            name: 'Super Admin', 
+      if (!profile && user.email) {
+        await createOrUpdateSuperAdminProfile(user.uid, {
+            name: 'Super Admin',
             email: user.email,
             uid: user.uid,
         });
@@ -66,12 +75,12 @@ export default function SuperAdminDashboardPage() {
       return profile;
     },
     enabled: !!user?.uid,
-    initialData: authSuperAdminProfile, 
+    initialData: authSuperAdminProfile,
   });
 
   const mutation = useMutation({
-    mutationFn: () => createOrUpdateSuperAdminProfile(user!.uid, { 
-      name: 'Super Admin', 
+    mutationFn: () => createOrUpdateSuperAdminProfile(user!.uid, {
+      name: 'Super Admin',
       email: user!.email!,
       uid: user!.uid,
     }),
@@ -110,11 +119,11 @@ export default function SuperAdminDashboardPage() {
       </div>
     );
   }
-  
+
   const displayName = superAdminData?.name || user?.email || "Super Admin";
 
   return (
-    <div className="flex flex-col"> {/* Changed to flex-col to allow WaveHeader to sit above content naturally */}
+    <div className="flex flex-col">
       <WaveHeader
         title={
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white">
@@ -126,12 +135,12 @@ export default function SuperAdminDashboardPage() {
             Manage your platform efficiently.
           </p>
         }
-        icon={<Gauge size={48} className="text-white" />} // Example icon
-        className="mb-0" // Remove bottom margin from header itself
-        contentClassName="py-10 sm:py-14 md:py-20" // Adjust padding for visual balance
+        icon={<Gauge size={48} className="text-white" />}
+        className="mb-0"
+        contentClassName="py-10 sm:py-14 md:py-20"
       />
 
-      <main className="container mx-auto p-4 sm:p-6 md:p-8 mt-[-4rem] sm:mt-[-5rem] md:mt-[-6rem] relative z-10"> {/* Negative margin to pull content up over the wave */}
+      <main className="container mx-auto p-4 sm:p-6 md:p-8 mt-[-4rem] sm:mt-[-5rem] md:mt-[-6rem] relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <DashboardActionCard
             title="Add New Admin"
@@ -161,30 +170,53 @@ export default function SuperAdminDashboardPage() {
             href="/dashboard/profile"
             cta="Go to Profile"
           />
-          {/* Example for a future settings card or similar */}
-          {/* <DashboardActionCard
-            title="Platform Settings"
-            description="Configure global platform settings."
-            icon={Settings}
-            href="/dashboard/settings" 
-            cta="Configure Settings"
-          /> */}
-          <Card className="rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out hover:-translate-y-1.5 md:col-span-2 lg:col-span-1 flex flex-col">
-            <CardHeader className="flex flex-row items-center space-x-4 pb-2">
-              <div className="p-3 rounded-full bg-primary/10 text-primary">
-                <LogOut className="h-6 w-6" />
-              </div>
-              <div>
-                <CardTitle className="text-xl">Log Out</CardTitle>
+          <DashboardActionCard
+            title="Log Out"
+            description="Securely sign out of your account."
+            icon={LogOut}
+            cta="Sign Out"
+            onClick={signOut}
+          />
+        </div>
+
+        {/* Download App Card Section */}
+        <div className="mt-12">
+          <Card className="rounded-2xl shadow-xl overflow-hidden bg-gradient-to-br from-primary/80 to-accent/80 text-primary-foreground hover:shadow-2xl transition-all duration-300 ease-in-out hover:-translate-y-1.5">
+            <CardHeader className="pb-3">
+              <div className="flex items-center space-x-3">
+                <Smartphone size={32} />
+                <CardTitle className="text-2xl font-bold">Get Our Android App</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="flex-grow">
-              <p className="text-muted-foreground">Securely sign out of your account.</p>
-            </CardContent>
-            <CardContent className="pt-0">
-              <Button variant="default" className="w-full" onClick={signOut}> {/* Changed from destructive/outline */}
-                Sign Out
-              </Button>
+            <CardContent>
+              <CardDescription className="text-primary-foreground/90 mb-4">
+                Download the official Android application to manage tasks on the go.
+              </CardDescription>
+              <a
+                href={apkDownloadLink}
+                download="TirupatiGroupApp.apk" // Suggests a filename to the browser
+                target="_blank" // Opens in a new tab, good practice for downloads
+                rel="noopener noreferrer"
+                className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full sm:w-auto text-primary bg-primary-foreground hover:bg-primary-foreground/90 ${apkDownloadLink === "YOUR_APK_DOWNLOAD_LINK_HERE" ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={(e) => {
+                  if (apkDownloadLink === "YOUR_APK_DOWNLOAD_LINK_HERE") {
+                    e.preventDefault();
+                    toast({
+                      title: "Download Link Not Set",
+                      description: "The APK download link has not been configured yet.",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+              >
+                <Download className="mr-2 h-5 w-5" />
+                Download APK
+              </a>
+              {apkDownloadLink === "YOUR_APK_DOWNLOAD_LINK_HERE" && (
+                <p className="text-xs text-primary-foreground/70 mt-2">
+                  (Admin: Please replace placeholder link in the code with the actual APK URL.)
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -192,3 +224,5 @@ export default function SuperAdminDashboardPage() {
     </div>
   );
 }
+
+    
