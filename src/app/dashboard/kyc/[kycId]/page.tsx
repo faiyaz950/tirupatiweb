@@ -36,26 +36,28 @@ const InfoItem = ({ label, value, capitalize = false, icon: Icon, isDate = false
   } else if (isDate && typeof value === 'string' && value.trim() !== '') {
     let formattedDate = '';
     try {
-      const dateObj = new Date(value);
-      if (isValid(dateObj)) {
-        formattedDate = format(dateObj, "PPP");
+      // Try parsing with new Date() first, as it's more lenient with formats like "16 May 2011"
+      const generalDateObj = new Date(value);
+      if (isValid(generalDateObj)) {
+        formattedDate = format(generalDateObj, "PPP");
       } else {
+        // Fallback to parseISO for strict ISO formats if new Date() fails
         const isoDateObj = parseISO(value); 
         if (isValid(isoDateObj)) {
           formattedDate = format(isoDateObj, "PPP");
         }
       }
     } catch (error) {
-      // Errors during parsing or formatting
+      // Errors during parsing or formatting, original value will be used if formattedDate is empty
     }
-    displayValue = formattedDate || value; 
+    displayValue = formattedDate || value; // Show formatted date or original string if formatting failed
   } else if (typeof value === 'boolean') {
     displayValue = value ? 'Yes' : 'No';
-  } else if (value || value === 0) { 
+  } else if (value || value === 0) { // Handles numbers including 0
     displayValue = capitalize ? (String(value).charAt(0).toUpperCase() + String(value).slice(1)) : String(value);
   }
 
-  if (displayValue === "") {
+  if (displayValue === "") { // Ensure empty string from DB becomes N/A
     displayValue = 'N/A';
   }
 
@@ -73,40 +75,43 @@ const InfoItem = ({ label, value, capitalize = false, icon: Icon, isDate = false
 };
 
 const ImageViewer = ({ url, label }: { url?: string | null; label: string }) => {
-  const placeholderSrc = 'https://placehold.co/300x200.png'; 
-  const displaySrc = url || placeholderSrc;
+  const placeholderSrc = 'https://placehold.co/300x200.png';
+  
+  // Determine if the provided URL is valid (data URI, http, or https)
+  const isProvidedUrlValid = url && (url.startsWith('data:image/') || url.startsWith('http://') || url.startsWith('https://'));
+  const displaySrc = isProvidedUrlValid ? url : placeholderSrc;
 
   return (
     <div className="py-1.5">
       <p className="text-sm text-muted-foreground mb-1">{label}:</p>
       <a
-        href={url || '#'}
+        href={isProvidedUrlValid ? url : '#'} // Link to actual url only if valid, otherwise '#'
         target="_blank"
         rel="noopener noreferrer"
-        className={`block w-full max-w-xs relative group rounded-md overflow-hidden border shadow-sm ${!url ? 'cursor-default' : 'hover:opacity-90 transition-opacity'}`}
-        onClick={(e) => { if (!url) e.preventDefault(); }}
+        className={`block w-full max-w-xs relative group rounded-md overflow-hidden border shadow-sm ${!isProvidedUrlValid ? 'cursor-default' : 'hover:opacity-90 transition-opacity'}`}
+        onClick={(e) => { if (!isProvidedUrlValid) e.preventDefault(); }} // Prevent navigation for placeholder/invalid
       >
         <Image
-          src={displaySrc}
-          alt={`${label}${!url ? ' - Image Unavailable' : ''}`}
+          src={displaySrc} // Use the validated or placeholder URL
+          alt={`${label}${!isProvidedUrlValid ? ' - Image Unavailable' : ''}`}
           width={300}
           height={200}
           className="object-cover w-full h-auto aspect-[3/2]" 
           data-ai-hint="document identification"
           onError={(e) => {
             const target = e.currentTarget;
-            if (target.src !== placeholderSrc) {
+            if (target.src !== placeholderSrc) { // Avoid infinite loop if placeholder itself fails
               target.src = placeholderSrc;
               target.alt = `${label} - Image Unavailable`;
             }
           }}
         />
-        {url && (
+        {isProvidedUrlValid && ( // Show "View Full Image" only if a valid image is displayed
           <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity text-white text-sm font-medium">
             View Full Image
           </span>
         )}
-        {!url && (
+        {!isProvidedUrlValid && ( // Show "Not Provided" overlay if using placeholder
            <span className="absolute inset-0 flex items-center justify-center bg-black/60 text-white text-xs p-2 text-center font-medium">
              {label} Not Provided
            </span>
@@ -121,25 +126,26 @@ const formatTimestampForExcel = (timestampInput: Timestamp | Date | string | nul
   try {
     let date: Date;
     if (typeof timestampInput === 'string') {
-      const parsedDate = parseISO(timestampInput); 
+      const parsedDate = parseISO(timestampInput); // Handles ISO strings
       if (isValid(parsedDate)) {
         date = parsedDate;
       } else {
-        const generalParsedDate = new Date(timestampInput); 
+        const generalParsedDate = new Date(timestampInput); // Handles more general date strings
         if (isValid(generalParsedDate)) {
           date = generalParsedDate;
         } else {
-          return timestampInput; 
+          return timestampInput; // Return original string if unparseable
         }
       }
-    } else if ((timestampInput as Timestamp)?.toDate) { 
+    } else if ((timestampInput as Timestamp)?.toDate) { // Firebase Timestamp
       date = (timestampInput as Timestamp).toDate();
-    } else { 
+    } else { // JS Date object
       date = timestampInput as Date;
     }
     return format(date, "yyyy-MM-dd HH:mm:ss");
   } catch (error) {
-    return String(timestampInput); 
+    // console.warn("Error formatting date for Excel:", timestampInput, error);
+    return String(timestampInput); // Fallback to string representation
   }
 };
 
@@ -158,7 +164,7 @@ export default function KycDetailPage() {
   });
 
   const mutation = useMutation({
-    mutationFn: (newStatus: KYC['status']) => updateKycRecord(kycId, { status: newStatus, verified: newStatus === 'verified' }),
+    mutationFn: (newStatus: KYC['status']) => updateKycRecord(kycId, { status: newStatus }),
     onSuccess: (_, newStatus) => {
       queryClient.invalidateQueries({ queryKey: ['kyc', kycId] });
       queryClient.invalidateQueries({ queryKey: ['kycRecords'] });
@@ -175,9 +181,9 @@ export default function KycDetailPage() {
       return;
     }
     try {
-      const pInfo = kyc.personal_info || {};
-      const profInfo = kyc.professional_info || {};
-      const bankInfo = kyc.bank_info || {};
+      const pInfo = kyc.personal_info || {} as KycPersonalInfo;
+      const profInfo = kyc.professional_info || {} as KycProfessionalInfo;
+      const bankInfo = kyc.bank_info || {} as KycBankInfo;
 
       const dataToExport = [{
         "ID": kyc.id || 'N/A',
@@ -268,34 +274,39 @@ export default function KycDetailPage() {
   const profInfo = kyc.professional_info || {} as KycProfessionalInfo;
   const bankInfo = kyc.bank_info || {} as KycBankInfo;
   
-  // Access documents from the kyc.documents array
   const aadharCardUrl = kyc.documents && kyc.documents.length > 0 ? kyc.documents[0] : null;
   const panCardUrl = kyc.documents && kyc.documents.length > 1 ? kyc.documents[1] : null;
   const applicantPhotoUrl = kyc.documents && kyc.documents.length > 2 ? kyc.documents[2] : null;
 
 
   const getStatusBadge = () => {
+    let badgeVariant: "default" | "destructive" | "secondary" = "secondary";
+    let IconComponent: React.ElementType = HelpCircle;
+    let className = "bg-yellow-500 hover:bg-yellow-600 text-white";
+
     switch (kyc.status) {
       case 'verified':
-        return (
-          <Badge variant="default" className="text-sm px-3 py-1 mt-2 sm:mt-0 bg-green-500 hover:bg-green-600">
-            <CheckCircle className="mr-1.5 h-4 w-4" /> Verified
-          </Badge>
-        );
+        badgeVariant = "default";
+        IconComponent = CheckCircle;
+        className = "bg-green-500 hover:bg-green-600";
+        break;
       case 'rejected':
-        return (
-          <Badge variant="destructive" className="text-sm px-3 py-1 mt-2 sm:mt-0">
-            <XCircle className="mr-1.5 h-4 w-4" /> Rejected
-          </Badge>
-        );
+        badgeVariant = "destructive";
+        IconComponent = XCircle;
+        // Destructive badge variant handles its own colors
+        className = ""; 
+        break;
       case 'pending':
       default:
-        return (
-          <Badge variant="secondary" className="text-sm px-3 py-1 mt-2 sm:mt-0 bg-yellow-500 hover:bg-yellow-600 text-white">
-            <HelpCircle className="mr-1.5 h-4 w-4" /> Pending
-          </Badge>
-        );
+        // Already set
+        break;
     }
+    return (
+      <Badge variant={badgeVariant} className={`text-sm px-3 py-1 mt-2 sm:mt-0 ${className}`}>
+        <IconComponent className="mr-1.5 h-4 w-4" /> 
+        {kyc.status ? (kyc.status.charAt(0).toUpperCase() + kyc.status.slice(1)) : 'Pending'}
+      </Badge>
+    );
   };
   
   const getStatusIcon = () => {
@@ -382,7 +393,6 @@ export default function KycDetailPage() {
           <Separator className="my-6" />
           <SectionTitle title="KYC Information & Status" icon={getStatusIcon()} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-            <InfoItem label="User ID" value={kyc.user_id} icon={UserCircleIcon} />
             <InfoItem label="Current Status" value={kyc.status} capitalize icon={getStatusIcon()} />
             {kyc.verifiedAt && <InfoItem label="Verified At" value={kyc.verifiedAt as Date} icon={CalendarCheck2} isDate={true} />}
             {kyc.verified_by && <InfoItem label="Verified By" value={kyc.verified_by} icon={UserSquare} />}
@@ -428,3 +438,5 @@ export default function KycDetailPage() {
     </div>
   );
 }
+
+    
