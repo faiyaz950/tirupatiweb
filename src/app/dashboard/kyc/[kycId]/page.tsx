@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { 
-    ArrowLeft, Loader2, AlertTriangle, User, Briefcase, Banknote, FileArchive, 
+    ArrowLeft, Loader2, AlertTriangle, User, Briefcase, Banknote, 
     CheckCircle, XCircle, HelpCircle, BookUser, Hash, SmartphoneNfc, 
     ScanFace, CalendarDays, Cake, MapPin, CreditCard, Mail, Phone, Home, UserSquare, Landmark, Edit3, CalendarCheck2, UserCircle as UserCircleIcon, Users as UsersIcon
 } from 'lucide-react'; 
@@ -74,53 +74,6 @@ const InfoItem = ({ label, value, capitalize = false, icon: Icon, isDate = false
   );
 };
 
-const ImageViewer = ({ url, label }: { url?: string | null; label: string }) => {
-  const placeholderSrc = 'https://placehold.co/300x200.png';
-  
-  // Determine if the provided URL is valid (data URI, http, or https)
-  const isProvidedUrlValid = url && (url.startsWith('data:image/') || url.startsWith('http://') || url.startsWith('https://'));
-  const displaySrc = isProvidedUrlValid ? url : placeholderSrc;
-
-  return (
-    <div className="py-1.5">
-      <p className="text-sm text-muted-foreground mb-1">{label}:</p>
-      <a
-        href={isProvidedUrlValid ? url : '#'} // Link to actual url only if valid, otherwise '#'
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`block w-full max-w-xs relative group rounded-md overflow-hidden border shadow-sm ${!isProvidedUrlValid ? 'cursor-default' : 'hover:opacity-90 transition-opacity'}`}
-        onClick={(e) => { if (!isProvidedUrlValid) e.preventDefault(); }} // Prevent navigation for placeholder/invalid
-      >
-        <Image
-          src={displaySrc} // Use the validated or placeholder URL
-          alt={`${label}${!isProvidedUrlValid ? ' - Image Unavailable' : ''}`}
-          width={300}
-          height={200}
-          className="object-cover w-full h-auto aspect-[3/2]" 
-          data-ai-hint="document identification"
-          onError={(e) => {
-            const target = e.currentTarget;
-            if (target.src !== placeholderSrc) { // Avoid infinite loop if placeholder itself fails
-              target.src = placeholderSrc;
-              target.alt = `${label} - Image Unavailable`;
-            }
-          }}
-        />
-        {isProvidedUrlValid && ( // Show "View Full Image" only if a valid image is displayed
-          <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity text-white text-sm font-medium">
-            View Full Image
-          </span>
-        )}
-        {!isProvidedUrlValid && ( // Show "Not Provided" overlay if using placeholder
-           <span className="absolute inset-0 flex items-center justify-center bg-black/60 text-white text-xs p-2 text-center font-medium">
-             {label} Not Provided
-           </span>
-        )}
-      </a>
-    </div>
-  );
-};
-
 const formatTimestampForExcel = (timestampInput: Timestamp | Date | string | null | undefined): string => {
   if (!timestampInput) return 'N/A';
   try {
@@ -164,7 +117,7 @@ export default function KycDetailPage() {
   });
 
   const mutation = useMutation({
-    mutationFn: (newStatus: KYC['status']) => updateKycRecord(kycId, { status: newStatus }),
+    mutationFn: (newStatus: KYC['status']) => updateKycRecord(kycId, { status: newStatus, verified_by: 'Super Admin' }), // Assuming super admin verifies
     onSuccess: (_, newStatus) => {
       queryClient.invalidateQueries({ queryKey: ['kyc', kycId] });
       queryClient.invalidateQueries({ queryKey: ['kycRecords'] });
@@ -274,10 +227,6 @@ export default function KycDetailPage() {
   const profInfo = kyc.professional_info || {} as KycProfessionalInfo;
   const bankInfo = kyc.bank_info || {} as KycBankInfo;
   
-  const aadharCardUrl = kyc.documents && kyc.documents.length > 0 ? kyc.documents[0] : null;
-  const panCardUrl = kyc.documents && kyc.documents.length > 1 ? kyc.documents[1] : null;
-  const applicantPhotoUrl = kyc.documents && kyc.documents.length > 2 ? kyc.documents[2] : null;
-
 
   const getStatusBadge = () => {
     let badgeVariant: "default" | "destructive" | "secondary" = "secondary";
@@ -293,12 +242,10 @@ export default function KycDetailPage() {
       case 'rejected':
         badgeVariant = "destructive";
         IconComponent = XCircle;
-        // Destructive badge variant handles its own colors
         className = ""; 
         break;
       case 'pending':
       default:
-        // Already set
         break;
     }
     return (
@@ -326,7 +273,9 @@ export default function KycDetailPage() {
                 <Link href="/dashboard/kyc"><ArrowLeft className="mr-2 h-4 w-4" /> Back to KYC List</Link>
             </Button>
             <Button variant="outline" onClick={handleExportSingleKyc}>
-                <FileArchive className="mr-2 h-4 w-4" /> Export this KYC to Excel
+                {/* Assuming FileArchive is defined or imported. If not, replace or import. */}
+                {/* <FileArchive className="mr-2 h-4 w-4" /> Export this KYC to Excel */}
+                <Mail className="mr-2 h-4 w-4" /> Export this KYC to Excel {/* Placeholder if FileArchive not available */}
             </Button>
         </div>
       <Card className="shadow-xl">
@@ -380,14 +329,6 @@ export default function KycDetailPage() {
             <InfoItem label="Bank Name" value={bankInfo.bank_name} icon={Landmark} />
             <InfoItem label="Branch Name" value={bankInfo.branch_name} icon={Home} />
             <InfoItem label="IFSC Code" value={bankInfo.ifsc_code} icon={Hash} />
-          </div>
-
-          <Separator className="my-6" />
-          <SectionTitle title="Documents" icon={FileArchive} />
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-            <ImageViewer url={aadharCardUrl} label="Aadhar Card" />
-            <ImageViewer url={panCardUrl} label="PAN Card" />
-            <ImageViewer url={applicantPhotoUrl} label="Applicant Photo" />
           </div>
 
           <Separator className="my-6" />
