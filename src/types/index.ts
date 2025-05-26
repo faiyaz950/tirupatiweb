@@ -64,13 +64,7 @@ export interface KycBankInfo {
   branch_name?: string;
 }
 
-export interface KycDocumentInfo {
-  aadhar_card_url?: string;
-  pan_card_url?: string;
-  photo_url?: string;
-  // ... other document urls
-}
-
+// KycDocumentInfo interface is removed as we'll use a documents array.
 
 export interface KYC {
   id: string;
@@ -78,7 +72,7 @@ export interface KYC {
   personal_info: KycPersonalInfo;
   professional_info: KycProfessionalInfo;
   bank_info: KycBankInfo;
-  document_info: KycDocumentInfo;
+  documents?: (string | null)[]; // Array of Base64 Data URIs: [0]=Aadhar, [1]=PAN, [2]=Photo
   status: 'pending' | 'verified' | 'rejected';
   verified: boolean;
   remarks?: string;

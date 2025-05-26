@@ -13,10 +13,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { 
-    Loader2, FileText, AlertTriangle, Search, Eye, Users, UserCheck, Briefcase, Cake, Users as UsersIcon, Filter, Server
+    Loader2, FileText, AlertTriangle, Search, Eye, Users, UserCheck, Briefcase, Cake, Users as UsersIcon, Filter, Server, HelpCircle, XCircle, CheckCircle as VerifiedIcon // Renamed to avoid conflict
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { KycExportButton } from './KycExportButton'; // Make sure this path is correct
+import { KycExportButton } from './KycExportButton'; 
 
 const KycCardInfoItem = ({ icon: Icon, label, value }: { icon?: React.ElementType; label: string; value?: string | null | React.ReactNode }) => (
   <div className="flex items-start space-x-2 text-sm">
@@ -29,16 +29,16 @@ const KycCardInfoItem = ({ icon: Icon, label, value }: { icon?: React.ElementTyp
 );
 
 const getStatusBadge = (status?: KYC['status']) => {
-  let IconComponent: React.ElementType = FileText;
+  let IconComponent: React.ElementType = HelpCircle; // Default for pending
   let badgeVariant: "default" | "destructive" | "secondary" = "secondary";
-  let badgeClassName = "bg-yellow-500 hover:bg-yellow-600 text-white"; // Default for pending
+  let badgeClassName = "bg-yellow-500 hover:bg-yellow-600 text-white"; 
 
   if (status === 'verified') {
-    IconComponent = UserCheck;
+    IconComponent = VerifiedIcon;
     badgeVariant = "default";
     badgeClassName = "bg-green-500 hover:bg-green-600";
   } else if (status === 'rejected') {
-    IconComponent = FileText; // Could use XCircle if preferred
+    IconComponent = XCircle; 
     badgeVariant = "destructive";
     badgeClassName = "bg-red-500 hover:bg-red-600";
   }
@@ -66,7 +66,7 @@ export function KycList() {
     }),
   });
 
-  const filteredKycRecords = kycRecords; // Filtering is now handled by getAllKycRecords
+  const filteredKycRecords = kycRecords; 
 
   if (isLoading) {
     return (
@@ -141,12 +141,14 @@ export function KycList() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredKycRecords?.map((kyc) => (
+          {filteredKycRecords?.map((kyc) => {
+            const applicantPhotoUrl = kyc.documents && kyc.documents.length > 2 ? kyc.documents[2] : undefined;
+            return (
             <Card key={kyc.id} className="rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out flex flex-col overflow-hidden hover:-translate-y-1">
               <CardHeader className="p-5 bg-muted/30">
                 <div className="flex items-center gap-4">
                   <Avatar className="h-16 w-16 border-2 border-primary">
-                    <AvatarImage src={kyc.document_info?.photo_url || undefined} alt={kyc.personal_info?.name || 'User'} />
+                    <AvatarImage src={applicantPhotoUrl || undefined} alt={kyc.personal_info?.name || 'User'} />
                     <AvatarFallback className="text-2xl">
                       {kyc.personal_info?.name ? kyc.personal_info.name.charAt(0).toUpperCase() : 'U'}
                     </AvatarFallback>
@@ -154,9 +156,9 @@ export function KycList() {
                   <div>
                     <CardTitle className="text-xl font-bold">{kyc.personal_info?.name || 'N/A'}</CardTitle>
                     <CardDescription className="text-sm text-muted-foreground min-h-[1.25rem]">
-                      {kyc.status === 'verified' && kyc.verifiedBy ? (
-                        <span className="flex items-center"><UserCheck className="mr-1 h-4 w-4 text-green-600" /> Verified By: {kyc.verifiedBy}</span>
-                      ) : kyc.userId || ''}
+                      {kyc.status === 'verified' && kyc.verified_by ? (
+                        <span className="flex items-center"><UserCheck className="mr-1 h-4 w-4 text-green-600" /> Verified By: {kyc.verified_by}</span>
+                      ) : kyc.user_id || ''}
                     </CardDescription>
                   </div>
                 </div>
@@ -176,7 +178,7 @@ export function KycList() {
                 </Link>
               </CardFooter>
             </Card>
-          ))}
+          )})}
         </div>
       )}
     </div>

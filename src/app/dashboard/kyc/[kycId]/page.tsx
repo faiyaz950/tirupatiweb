@@ -4,7 +4,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getKycById, updateKycRecord } from '@/lib/firestore';
-import type { KYC, KycPersonalInfo, KycProfessionalInfo, KycBankInfo, KycDocumentInfo } from '@/types';
+import type { KYC, KycPersonalInfo, KycProfessionalInfo, KycBankInfo } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -36,12 +36,10 @@ const InfoItem = ({ label, value, capitalize = false, icon: Icon, isDate = false
   } else if (isDate && typeof value === 'string' && value.trim() !== '') {
     let formattedDate = '';
     try {
-      // Try parsing with `new Date()` first, as it's more lenient with formats like "16 May 2011"
       const dateObj = new Date(value);
-      if (isValid(dateObj)) { // Check if the date is valid
+      if (isValid(dateObj)) {
         formattedDate = format(dateObj, "PPP");
       } else {
-        // If `new Date()` fails, try `parseISO` for strict ISO formats
         const isoDateObj = parseISO(value); 
         if (isValid(isoDateObj)) {
           formattedDate = format(isoDateObj, "PPP");
@@ -269,7 +267,12 @@ export default function KycDetailPage() {
   const pInfo = kyc.personal_info || {} as KycPersonalInfo;
   const profInfo = kyc.professional_info || {} as KycProfessionalInfo;
   const bankInfo = kyc.bank_info || {} as KycBankInfo;
-  const docInfo = kyc.document_info || {} as KycDocumentInfo;
+  
+  // Access documents from the kyc.documents array
+  const aadharCardUrl = kyc.documents && kyc.documents.length > 0 ? kyc.documents[0] : null;
+  const panCardUrl = kyc.documents && kyc.documents.length > 1 ? kyc.documents[1] : null;
+  const applicantPhotoUrl = kyc.documents && kyc.documents.length > 2 ? kyc.documents[2] : null;
+
 
   const getStatusBadge = () => {
     switch (kyc.status) {
@@ -351,7 +354,6 @@ export default function KycDetailPage() {
             <InfoItem label="Designation" value={profInfo.designation} icon={UserSquare} />
             <InfoItem label="Education" value={profInfo.education} icon={BookUser} />
             <InfoItem label="Date of Joining" value={profInfo.date_of_joining} icon={CalendarDays} isDate={true} />
-            {/* Date of Exit removed from display */}
             <InfoItem label="Aadhar Number" value={profInfo.aadhar_number} icon={CreditCard} />
             <InfoItem label="Name as per Aadhar" value={profInfo.name_as_per_aadhar} icon={ScanFace} />
             <InfoItem label="PAN Number" value={profInfo.pan_number} icon={CreditCard} />
@@ -372,14 +374,15 @@ export default function KycDetailPage() {
           <Separator className="my-6" />
           <SectionTitle title="Documents" icon={FileArchive} />
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-            <ImageViewer url={docInfo.aadhar_card_url} label="Aadhar Card" />
-            <ImageViewer url={docInfo.pan_card_url} label="PAN Card" />
-            <ImageViewer url={docInfo.photo_url} label="Applicant Photo" />
+            <ImageViewer url={aadharCardUrl} label="Aadhar Card" />
+            <ImageViewer url={panCardUrl} label="PAN Card" />
+            <ImageViewer url={applicantPhotoUrl} label="Applicant Photo" />
           </div>
 
           <Separator className="my-6" />
           <SectionTitle title="KYC Information & Status" icon={getStatusIcon()} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+            <InfoItem label="User ID" value={kyc.user_id} icon={UserCircleIcon} />
             <InfoItem label="Current Status" value={kyc.status} capitalize icon={getStatusIcon()} />
             {kyc.verifiedAt && <InfoItem label="Verified At" value={kyc.verifiedAt as Date} icon={CalendarCheck2} isDate={true} />}
             {kyc.verified_by && <InfoItem label="Verified By" value={kyc.verified_by} icon={UserSquare} />}
@@ -425,6 +428,3 @@ export default function KycDetailPage() {
     </div>
   );
 }
-
-
-    
