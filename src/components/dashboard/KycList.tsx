@@ -1,23 +1,26 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { getKycById } from '@/lib/firestore'; // Corrected import: getKycRecordById to getKycById
+import { getAllKycRecords } from '@/lib/firestore';
 import type { KYC } from '@/types';
-import { 
-  Loader2, FileText, AlertTriangle, ArrowLeft, Building, User, Briefcase, Cake, Users as UsersIcon, 
-  Home, MapPin, Phone, Mail, CreditCard, Banknote, File, UserCheck, Calendar, Book, FileSignature 
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { 
+    Loader2, FileText, AlertTriangle, Search, Eye, Users, UserCheck, Briefcase, Cake, Users as UsersIcon, Filter, Server
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { KycExportButton } from './KycExportButton'; // Make sure this path is correct
 
-const KycCardInfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value?: string | null | React.ReactNode }) => (
-  <div className="flex items-center space-x-2 text-sm">
-    <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+const KycCardInfoItem = ({ icon: Icon, label, value }: { icon?: React.ElementType; label: string; value?: string | null | React.ReactNode }) => (
+  <div className="flex items-start space-x-2 text-sm">
+    {Icon && <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />}
     <div>
       <span className="text-muted-foreground">{label}: </span> 
       {typeof value === 'string' || typeof value === 'number' ? <span className="font-medium break-all">{value || 'N/A'}</span> : value}
@@ -25,192 +28,157 @@ const KycCardInfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType
   </div>
 );
 
-const getStatusBadge = (status?: KYC['status']) => { // Added optional chaining for status
-  let IconComponent = FileText;
-  let variant: "default" | "destructive" | "secondary" = "secondary";
-  let className = "bg-yellow-500 hover:bg-yellow-600 text-white"; // Default for pending or undefined
+const getStatusBadge = (status?: KYC['status']) => {
+  let IconComponent: React.ElementType = FileText;
+  let badgeVariant: "default" | "destructive" | "secondary" = "secondary";
+  let badgeClassName = "bg-yellow-500 hover:bg-yellow-600 text-white"; // Default for pending
 
   if (status === 'verified') {
     IconComponent = UserCheck;
-    variant = "default";
-    className = "bg-green-500 hover:bg-green-600";
+    badgeVariant = "default";
+    badgeClassName = "bg-green-500 hover:bg-green-600";
   } else if (status === 'rejected') {
-    IconComponent = FileText; // Or XCircle from lucide-react if preferred
-    variant = "destructive";
-    className = "bg-red-500 hover:bg-red-600";
+    IconComponent = FileText; // Could use XCircle if preferred
+    badgeVariant = "destructive";
+    badgeClassName = "bg-red-500 hover:bg-red-600";
   }
 
-
-  const statusText = status && typeof status === 'string' 
-  ? status.charAt(0).toUpperCase() + status.slice(1)
-  : 'Pending'; // Default text if status is undefined
+  const statusText = status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Pending';
 
   return (
-    <Badge variant={variant} className={`text-xs px-2 py-1 ${className}`}>
+    <Badge variant={badgeVariant} className={`text-xs px-2 py-1 ${badgeClassName}`}>
       <IconComponent className="mr-1 h-3.5 w-3.5" />
       {statusText}
     </Badge>
   );
 };
 
-interface KycDetailProps {
-  params: { id: string };
-}
-
-// Note: The filename is KycList.tsx, but this component acts as a detail view for a single KYC.
-// This might be a source of confusion. For clarity, it could be renamed to KycDetailCard or similar if it's used as such.
-export default function KycDetail({ params }: KycDetailProps) {
+export function KycList() {
   const router = useRouter();
-  const { id } = params;
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const { data: kyc, isLoading, error, refetch } = useQuery<KYC | null>({ // Added | null for consistency with getKycById
-    queryKey: ['kycRecord', id],
-    queryFn: () => getKycById(id), // Corrected function call: getKycRecordById to getKycById
-    staleTime: 5 * 60 * 1000,
-    enabled: !!id, // Ensure query only runs if id is present
+  const { data: kycRecords, isLoading, error, refetch } = useQuery<KYC[]>({
+    queryKey: ['kycRecords', statusFilter, searchTerm],
+    queryFn: () => getAllKycRecords({ 
+      status: statusFilter === 'all' ? undefined : statusFilter,
+      searchQuery: searchTerm 
+    }),
   });
+
+  const filteredKycRecords = kycRecords; // Filtering is now handled by getAllKycRecords
 
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="ml-2">Loading KYC details...</p>
+        <p className="ml-2">Loading KYC records...</p>
       </div>
     );
   }
 
-  if (error || !kyc) {
+  if (error) {
     return (
       <div className="flex flex-col h-full items-center justify-center text-center p-8">
         <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
-        <h2 className="text-2xl font-semibold mb-2">Error Loading KYC Details</h2>
-        <p className="text-muted-foreground mb-4">{error?.message || 'KYC Record not found.'}</p>
+        <h2 className="text-2xl font-semibold mb-2">Error Loading KYC Records</h2>
+        <p className="text-muted-foreground mb-4">Could not load KYC data: {error.message}</p>
         <Button onClick={() => refetch()}>Retry</Button>
-        <Link href="/dashboard/kyc" passHref>
-          <Button variant="outline" className="mt-2"><ArrowLeft className="mr-2 h-4 w-4" /> Back to KYC List</Button>
-        </Link>
       </div>
     );
   }
-  
-  // Ensure personal_info, professional_info, bank_info, and documents exist, providing empty objects as fallbacks.
-  const pInfo = kyc.personal_info || {};
-  const profInfo = kyc.professional_info || {};
-  const bankInfo = kyc.bank_info || {};
-  const docs = kyc.document_info || {}; // Assuming documents are in document_info as per type, if it's an array use kyc.documents || []
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-8">
       <Card className="shadow-lg rounded-xl">
         <CardHeader className="p-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <CardTitle className="text-3xl font-bold text-primary flex items-center">
-                <FileText className="mr-3 h-8 w-8" /> KYC Details
+                <FileText className="mr-3 h-8 w-8" /> KYC Records
               </CardTitle>
               <CardDescription className="text-lg text-muted-foreground mt-1">
-                Detailed view of KYC submission for {pInfo.name || 'N/A'}
+                Review and manage all KYC submissions.
               </CardDescription>
             </div>
-            <Button variant="outline" onClick={() => router.back()}>
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
-            </Button>
+            <KycExportButton kycData={kycRecords || []} isLoading={isLoading} />
+          </div>
+          <div className="mt-6 flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-grow">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or company..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-12 text-base py-3 rounded-lg"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[240px] text-base py-3 rounded-lg">
+                <Filter className="mr-2 h-5 w-5 text-muted-foreground" />
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-base">All Statuses</SelectItem>
+                <SelectItem value="pending" className="text-base">Pending</SelectItem>
+                <SelectItem value="verified" className="text-base">Verified</SelectItem>
+                <SelectItem value="rejected" className="text-base">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
-        <CardContent className="p-6 space-y-6">
-          {/* Personal Info Section */}
-          <div>
-            <h3 className="text-xl font-semibold mb-3">Personal Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <KycCardInfoItem icon={User} label="Prefix" value={pInfo.prefix} />
-              <KycCardInfoItem icon={User} label="Name" value={pInfo.name} />
-              {/* Assuming father_husband_name might not exist, use father_name from type */}
-              <KycCardInfoItem icon={UsersIcon} label="Father/Husband Name" value={pInfo.father_name} /> 
-              <KycCardInfoItem icon={Calendar} label="Date of Birth" value={pInfo.dob} />
-              <KycCardInfoItem icon={Cake} label="Age" value={pInfo.age} />
-              <KycCardInfoItem icon={UsersIcon} label="Gender" value={pInfo.gender} />
-              <KycCardInfoItem icon={UsersIcon} label="Marital Status" value={pInfo.marital_status} />
-              <KycCardInfoItem icon={Home} label="Address" value={pInfo.address} />
-              <KycCardInfoItem icon={MapPin} label="State" value={pInfo.state} />
-              <KycCardInfoItem icon={MapPin} label="Pincode" value={pInfo.pincode} />
-              <KycCardInfoItem icon={Phone} label="Phone" value={pInfo.mobile} />
-              <KycCardInfoItem icon={Phone} label="Alternative Phone" value={pInfo.alt_mobile} />
-              <KycCardInfoItem icon={Mail} label="Email" value={pInfo.email} />
-            </div>
-          </div>
-
-          {/* Professional Info Section */}
-          <div>
-            <h3 className="text-xl font-semibold mb-3">Professional Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <KycCardInfoItem icon={CreditCard} label="Aadhar Number" value={profInfo.aadhar_number} />
-              <KycCardInfoItem icon={User} label="Name as per Aadhar" value={profInfo.name_as_per_aadhar} />
-              <KycCardInfoItem icon={Phone} label="Mobile Linked to Aadhar" value={profInfo.mobile_linked_to_aadhar} />
-              <KycCardInfoItem icon={CreditCard} label="PAN Number" value={profInfo.pan_number} />
-              <KycCardInfoItem icon={CreditCard} label="UAN Number" value={profInfo.uan_number} />
-              <KycCardInfoItem icon={CreditCard} label="ESIC Number" value={profInfo.esic_number} />
-              <KycCardInfoItem icon={Building} label="Company Name" value={profInfo.company_name} />
-              <KycCardInfoItem icon={Briefcase} label="Department" value={profInfo.department} />
-              <KycCardInfoItem icon={Briefcase} label="Designation" value={profInfo.designation} />
-              <KycCardInfoItem icon={Book} label="Education" value={profInfo.education} />
-              <KycCardInfoItem icon={Calendar} label="Date of Joining" value={profInfo.joining_date} />
-              {/* Remarks from professional_info was not in the recent request, keep if needed, else remove */}
-              {/* <KycCardInfoItem icon={FileSignature} label="Remarks" value={profInfo.remarks} /> */}
-            </div>
-          </div>
-
-          {/* Bank Info Section */}
-          <div>
-            <h3 className="text-xl font-semibold mb-3">Bank Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <KycCardInfoItem icon={Banknote} label="Account Number" value={bankInfo.account_number} />
-              <KycCardInfoItem icon={Building} label="Bank Name" value={bankInfo.bank_name} />
-              <KycCardInfoItem icon={Building} label="Branch Name" value={bankInfo.branch_name} />
-              <KycCardInfoItem icon={CreditCard} label="IFSC Code" value={bankInfo.ifsc_code} />
-            </div>
-          </div>
-
-          {/* Documents Section - Assuming document_info holds URLs and not an array of strings */}
-          <div>
-            <h3 className="text-xl font-semibold mb-3">Documents</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4"> {/* Changed to 3 columns for better layout */}
-              {docs.aadhar_card_url && (
-                <Link href={docs.aadhar_card_url} target="_blank" rel="noopener noreferrer" className="block text-blue-500 hover:underline">
-                   <KycCardInfoItem icon={File} label="Aadhar Card" value="View Document" />
-                </Link>
-              )}
-              {docs.pan_card_url && (
-                 <Link href={docs.pan_card_url} target="_blank" rel="noopener noreferrer" className="block text-blue-500 hover:underline">
-                   <KycCardInfoItem icon={File} label="PAN Card" value="View Document" />
-                 </Link>
-              )}
-               {docs.photo_url && (
-                 <Link href={docs.photo_url} target="_blank" rel="noopener noreferrer" className="block text-blue-500 hover:underline">
-                   <KycCardInfoItem icon={File} label="Photo" value="View Document" />
-                 </Link>
-              )}
-              {(!docs.aadhar_card_url && !docs.pan_card_url && !docs.photo_url) && (
-                <KycCardInfoItem icon={File} label="Documents" value="No documents uploaded" />
-              )}
-            </div>
-          </div>
-
-          {/* Verification Info */}
-          <div>
-            <h3 className="text-xl font-semibold mb-3">Verification Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <KycCardInfoItem icon={UserCheck} label="Status" value={getStatusBadge(kyc.status)} />
-              <KycCardInfoItem icon={User} label="Verified By" value={kyc.verifiedBy || 'N/A'} />
-              <KycCardInfoItem icon={Calendar} label="Verified At" value={kyc.verifiedAt ? new Date(kyc.verifiedAt.toString()).toLocaleDateString() : 'N/A'} />
-              {/* <KycCardInfoItem icon={Calendar} label="Updated At" value={kyc.updatedAt ? new Date(kyc.updatedAt.toString()).toLocaleDateString() : 'N/A'} /> */}
-              {/* <KycCardInfoItem icon={Calendar} label="Created At" value={kyc.created_at ? new Date(kyc.created_at.toString()).toLocaleDateString() : 'N/A'} /> */}
-              {/* <KycCardInfoItem icon={User} label="User ID" value={kyc.user_id} /> */}
-              <KycCardInfoItem icon={FileSignature} label="Remarks" value={kyc.remarks || 'N/A'} />
-            </div>
-          </div>
-        </CardContent>
       </Card>
+
+      {filteredKycRecords && filteredKycRecords.length === 0 ? (
+         <Card className="shadow-lg rounded-xl">
+          <CardContent className="text-center py-12">
+            <Server className="mx-auto h-16 w-16 text-muted-foreground/70 mb-6" />
+            <p className="text-xl font-semibold text-muted-foreground mb-2">No KYC Records Found</p>
+            <p className="text-md text-muted-foreground">
+              {searchTerm || statusFilter !== 'all' ? "Try adjusting your search or filter." : "No KYC submissions yet."}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredKycRecords?.map((kyc) => (
+            <Card key={kyc.id} className="rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out flex flex-col overflow-hidden hover:-translate-y-1">
+              <CardHeader className="p-5 bg-muted/30">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-16 w-16 border-2 border-primary">
+                    <AvatarImage src={kyc.document_info?.photo_url || undefined} alt={kyc.personal_info?.name || 'User'} />
+                    <AvatarFallback className="text-2xl">
+                      {kyc.personal_info?.name ? kyc.personal_info.name.charAt(0).toUpperCase() : 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <CardTitle className="text-xl font-bold">{kyc.personal_info?.name || 'N/A'}</CardTitle>
+                    <CardDescription className="text-sm text-muted-foreground min-h-[1.25rem]">
+                      {kyc.status === 'verified' && kyc.verifiedBy ? (
+                        <span className="flex items-center"><UserCheck className="mr-1 h-4 w-4 text-green-600" /> Verified By: {kyc.verifiedBy}</span>
+                      ) : kyc.userId || ''}
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-5 space-y-3 flex-grow">
+                <KycCardInfoItem icon={Briefcase} label="Company" value={kyc.professional_info?.company_name} />
+                <KycCardInfoItem icon={Briefcase} label="Designation" value={kyc.professional_info?.designation} />
+                <KycCardInfoItem icon={Cake} label="Age" value={kyc.personal_info?.age} />
+                <KycCardInfoItem icon={UsersIcon} label="Gender" value={kyc.personal_info?.gender} />
+                <KycCardInfoItem label="Status" value={getStatusBadge(kyc.status)} />
+              </CardContent>
+              <CardFooter className="p-5 border-t bg-muted/20">
+                <Link href={`/dashboard/kyc/${kyc.id}`} passHref className="w-full">
+                  <Button variant="outline" className="w-full">
+                    <Eye className="mr-2 h-4 w-4" /> View Details
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
-
