@@ -56,8 +56,7 @@ export default function SuperAdminDashboardPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // **IMPORTANT: Replace this placeholder with your actual DIRECT APK download URL from your chosen hosting service**
-  const apkDownloadLink = "PASTE_YOUR_DIRECT_APK_DOWNLOAD_LINK_HERE";
+  const apkDownloadLink = "https://drive.usercontent.google.com/download?id=1gw0TOOy8P9orsmTjU-_O0ASG6sM6vPjL&export=download&authuser=0";
 
   const { data: superAdminData, isLoading: isLoadingProfile, error: profileError } = useQuery<SuperAdminProfile | null>({
     queryKey: ['superAdminProfile', user?.uid],
