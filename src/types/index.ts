@@ -27,41 +27,41 @@ export interface Admin {
 }
 
 export interface KycPersonalInfo {
-  name?: string; // NAME
-  prefix?: string; // PREFIX
-  date_of_birth?: string; // DATE OF BIRTH (Corrected from dob)
-  age?: string; // AGE
-  gender?: string; // GENDER
-  father_husband_name?: string; // FATHER HUSBAND NAME (Corrected from father_name)
-  phone?: string; // PHONE (Corrected from mobile)
-  alternative_phone?: string; // ALTERNATIVE PHONE (Corrected from alt_mobile)
-  email?: string; // EMAIL
-  marital_status?: string; // MARITAL STATUS
-  address?: string; // ADDRESS
-  pincode?: string; // PINCODE
-  state?: string; // STATE
+  name?: string;
+  prefix?: string;
+  date_of_birth?: string; // DB: date_of_birth (e.g., "15 May 2002")
+  age?: string;
+  gender?: string;
+  father_husband_name?: string; // DB: father_husband_name
+  phone?: string; // DB: phone
+  alternative_phone?: string; // DB: alternative_phone
+  email?: string;
+  marital_status?: string;
+  address?: string;
+  pincode?: string;
+  state?: string;
 }
 
 export interface KycProfessionalInfo {
-  company_name?: string; // COMPANY NAME
-  designation?: string; // DESIGNATION
-  department?: string; // DEPARTMENT
-  date_of_joining?: string; // DATE OF JOINING (Corrected from joining_date)
-  pan_number?: string; // PAN NUMBER
-  education?: string; // EDUCATION
-  esic_number?: string; // ESIC NUMBER
-  mobile_linked_to_aadhar?: string; // MOBILE LINKED TO AADHAR
-  name_as_per_aadhar?: string; // NAME AS PER AADHAR
-  uan_number?: string; // UAN NUMBER
-  aadhar_number?: string; // AADHAR NUMBER
-  date_of_exit?: string; // Added as it's in DB example, though might be empty
+  company_name?: string;
+  designation?: string;
+  department?: string;
+  date_of_joining?: string; // DB: date_of_joining (e.g., "16 May 2011")
+  pan_number?: string;
+  education?: string;
+  esic_number?: string;
+  mobile_linked_to_aadhar?: string;
+  name_as_per_aadhar?: string;
+  uan_number?: string;
+  aadhar_number?: string;
+  date_of_exit?: string; // DB: date_of_exit (e.g., "")
 }
 
 export interface KycBankInfo {
-  bank_name?: string; // BANK NAME
-  account_number?: string; // ACCOUNT NUMBER
-  ifsc_code?: string; // IFSC CODE
-  branch_name?: string; // BRANCH NAME
+  bank_name?: string;
+  account_number?: string;
+  ifsc_code?: string;
+  branch_name?: string;
 }
 
 export interface KycDocumentInfo {
@@ -74,18 +74,18 @@ export interface KycDocumentInfo {
 
 export interface KYC {
   id: string;
-  user_id: string; // ID of the user/employee this KYC belongs to (Matches DB: user_id)
+  user_id: string; // DB: user_id
   personal_info: KycPersonalInfo;
   professional_info: KycProfessionalInfo;
   bank_info: KycBankInfo;
   document_info: KycDocumentInfo;
   status: 'pending' | 'verified' | 'rejected';
-  verified: boolean; // From Flutter code structure
+  verified: boolean;
   remarks?: string;
-  created_at: Timestamp | Date | string; // Changed from submittedAt to match DB
+  created_at: Timestamp | Date | string; // DB: created_at
   verifiedAt?: Timestamp | Date | string | null;
-  verified_by?: string; // Admin ID who verified (Matches DB: verified_by)
-  updatedAt?: Timestamp | Date | string; // Added as it's in DB example
+  verified_by?: string; // DB: verified_by
+  updatedAt?: Timestamp | Date | string; // DB: updatedAt
 }
 
 export interface SuperAdminProfile {

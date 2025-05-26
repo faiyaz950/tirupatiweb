@@ -13,12 +13,13 @@ import {
     CheckCircle, XCircle, HelpCircle, BookUser, Hash, SmartphoneNfc, 
     ScanFace, CalendarDays, Cake, MapPin, CreditCard, Mail, Phone, Home, UserSquare, Landmark, Edit3, CalendarCheck2, UserCircle as UserCircleIcon, Users as UsersIcon
 } from 'lucide-react'; 
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import * as XLSX from 'xlsx';
+import type { Timestamp } from 'firebase/firestore';
 
 const SectionTitle = ({ title, icon: Icon }: { title: string; icon: React.ElementType }) => (
   <div className="flex items-center space-x-2 mb-3 mt-4">
@@ -37,21 +38,18 @@ const InfoItem = ({ label, value, capitalize = false, icon: Icon, isDate = false
     try {
       // Try parsing with `new Date()` first, as it's more lenient with formats like "16 May 2011"
       const dateObj = new Date(value);
-      if (!isNaN(dateObj.getTime())) { // Check if the date is valid
+      if (isValid(dateObj)) { // Check if the date is valid
         formattedDate = format(dateObj, "PPP");
       } else {
         // If `new Date()` fails, try `parseISO` for strict ISO formats
-        const isoDateObj = parseISO(value); // This might throw for non-ISO strings
-        if (!isNaN(isoDateObj.getTime())) {
+        const isoDateObj = parseISO(value); 
+        if (isValid(isoDateObj)) {
           formattedDate = format(isoDateObj, "PPP");
         }
       }
     } catch (error) {
-      // Errors during parsing or formatting, or parseISO threw
-      // console.warn("Date parsing/formatting error for:", value, error);
+      // Errors during parsing or formatting
     }
-    // Show formatted date if successful, otherwise show original non-empty string.
-    // If formattedDate is still empty, it means all attempts failed for the non-empty 'value' string.
     displayValue = formattedDate || value; 
   } else if (typeof value === 'boolean') {
     displayValue = value ? 'Yes' : 'No';
@@ -59,7 +57,6 @@ const InfoItem = ({ label, value, capitalize = false, icon: Icon, isDate = false
     displayValue = capitalize ? (String(value).charAt(0).toUpperCase() + String(value).slice(1)) : String(value);
   }
 
-  // If after all logic, displayValue is an empty string (e.g. because original 'value' was "" and not a date), make it 'N/A'
   if (displayValue === "") {
     displayValue = 'N/A';
   }
@@ -121,6 +118,33 @@ const ImageViewer = ({ url, label }: { url?: string | null; label: string }) => 
   );
 };
 
+const formatTimestampForExcel = (timestampInput: Timestamp | Date | string | null | undefined): string => {
+  if (!timestampInput) return 'N/A';
+  try {
+    let date: Date;
+    if (typeof timestampInput === 'string') {
+      const parsedDate = parseISO(timestampInput); 
+      if (isValid(parsedDate)) {
+        date = parsedDate;
+      } else {
+        const generalParsedDate = new Date(timestampInput); 
+        if (isValid(generalParsedDate)) {
+          date = generalParsedDate;
+        } else {
+          return timestampInput; 
+        }
+      }
+    } else if ((timestampInput as Timestamp)?.toDate) { 
+      date = (timestampInput as Timestamp).toDate();
+    } else { 
+      date = timestampInput as Date;
+    }
+    return format(date, "yyyy-MM-dd HH:mm:ss");
+  } catch (error) {
+    return String(timestampInput); 
+  }
+};
+
 
 export default function KycDetailPage() {
   const params = useParams();
@@ -153,56 +177,63 @@ export default function KycDetailPage() {
       return;
     }
     try {
+      const pInfo = kyc.personal_info || {};
+      const profInfo = kyc.professional_info || {};
+      const bankInfo = kyc.bank_info || {};
+      const docInfo = kyc.document_info || {};
+
       const dataToExport = [{
-        "ID": kyc.id,
-        "User ID": kyc.user_id,
+        "ID": kyc.id || 'N/A',
+        "User ID": kyc.user_id || 'N/A',
         // Personal Info
-        "Name": kyc.personal_info?.name || 'N/A',
-        "Prefix": kyc.personal_info?.prefix || 'N/A',
-        "Gender": kyc.personal_info?.gender || 'N/A',
-        "Date of Birth": kyc.personal_info?.date_of_birth || 'N/A', // Keep as string from DB
-        "Age": kyc.personal_info?.age || 'N/A',
-        "Marital Status": kyc.personal_info?.marital_status || 'N/A',
-        "Father/Husband Name": kyc.personal_info?.father_husband_name || 'N/A',
-        "Phone": kyc.personal_info?.phone || 'N/A',
-        "Alternative Phone": kyc.personal_info?.alternative_phone || 'N/A',
-        "Email": kyc.personal_info?.email || 'N/A',
-        "Address": kyc.personal_info?.address || 'N/A',
-        "Pincode": kyc.personal_info?.pincode || 'N/A',
-        "State": kyc.personal_info?.state || 'N/A',
+        "Name": pInfo.name || 'N/A',
+        "Prefix": pInfo.prefix || 'N/A',
+        "Gender": pInfo.gender || 'N/A',
+        "Date of Birth": pInfo.date_of_birth || 'N/A',
+        "Age": pInfo.age || 'N/A',
+        "Marital Status": pInfo.marital_status || 'N/A',
+        "Father/Husband Name": pInfo.father_husband_name || 'N/A',
+        "Phone": pInfo.phone || 'N/A',
+        "Alternative Phone": pInfo.alternative_phone || 'N/A',
+        "Email": pInfo.email || 'N/A',
+        "Address": pInfo.address || 'N/A',
+        "Pincode": pInfo.pincode || 'N/A',
+        "State": pInfo.state || 'N/A',
         // Professional Info
-        "Company Name": kyc.professional_info?.company_name || 'N/A',
-        "Department": kyc.professional_info?.department || 'N/A',
-        "Designation": kyc.professional_info?.designation || 'N/A',
-        "Education": kyc.professional_info?.education || 'N/A',
-        "Date of Joining": kyc.professional_info?.date_of_joining || 'N/A', // Keep as string from DB
-        "Aadhar Number": kyc.professional_info?.aadhar_number || 'N/A',
-        "Name as per Aadhar": kyc.professional_info?.name_as_per_aadhar || 'N/A',
-        "PAN Number": kyc.professional_info?.pan_number || 'N/A',
-        "UAN Number": kyc.professional_info?.uan_number || 'N/A',
-        "ESIC Number": kyc.professional_info?.esic_number || 'N/A',
-        "Mobile Linked to Aadhar": kyc.professional_info?.mobile_linked_to_aadhar || 'N/A',
+        "Company Name": profInfo.company_name || 'N/A',
+        "Department": profInfo.department || 'N/A',
+        "Designation": profInfo.designation || 'N/A',
+        "Education": profInfo.education || 'N/A',
+        "Date of Joining": profInfo.date_of_joining || 'N/A',
+        "Date of Exit": profInfo.date_of_exit || 'N/A',
+        "Aadhar Number": profInfo.aadhar_number || 'N/A',
+        "Name as per Aadhar": profInfo.name_as_per_aadhar || 'N/A',
+        "PAN Number": profInfo.pan_number || 'N/A',
+        "UAN Number": profInfo.uan_number || 'N/A',
+        "ESIC Number": profInfo.esic_number || 'N/A',
+        "Mobile Linked to Aadhar": profInfo.mobile_linked_to_aadhar || 'N/A',
         // Bank Info
-        "Account Number": kyc.bank_info?.account_number || 'N/A',
-        "Bank Name": kyc.bank_info?.bank_name || 'N/A',
-        "Branch Name": kyc.bank_info?.branch_name || 'N/A',
-        "IFSC Code": kyc.bank_info?.ifsc_code || 'N/A',
+        "Account Number": bankInfo.account_number || 'N/A',
+        "Bank Name": bankInfo.bank_name || 'N/A',
+        "Branch Name": bankInfo.branch_name || 'N/A',
+        "IFSC Code": bankInfo.ifsc_code || 'N/A',
         // Document Info
-        "Aadhar Card URL": kyc.document_info?.aadhar_card_url || 'N/A',
-        "PAN Card URL": kyc.document_info?.pan_card_url || 'N/A',
-        "Photo URL": kyc.document_info?.photo_url || 'N/A',
-        // KYC Status
-        "KYC Status": kyc.status,
+        "Aadhar Card URL": docInfo.aadhar_card_url || 'N/A',
+        "PAN Card URL": docInfo.pan_card_url || 'N/A',
+        "Photo URL": docInfo.photo_url || 'N/A',
+        // KYC Status & Timestamps
+        "KYC Status": kyc.status || 'N/A',
         "Remarks": kyc.remarks || 'N/A',
-        "Created At": kyc.created_at ? (typeof kyc.created_at === 'string' ? kyc.created_at : format(new Date(kyc.created_at), "yyyy-MM-dd HH:mm:ss")) : 'N/A',
-        "Verified At": kyc.verifiedAt ? (typeof kyc.verifiedAt === 'string' ? kyc.verifiedAt : format(new Date(kyc.verifiedAt), "yyyy-MM-dd HH:mm:ss")) : 'N/A',
+        "Created At": formatTimestampForExcel(kyc.created_at),
+        "Verified At": formatTimestampForExcel(kyc.verifiedAt),
         "Verified By": kyc.verified_by || 'N/A',
+        "Updated At": formatTimestampForExcel(kyc.updatedAt),
       }];
 
       const worksheet = XLSX.utils.json_to_sheet(dataToExport);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "KYC Detail");
-      XLSX.writeFile(workbook, `KYC_Detail_${kyc.personal_info?.name || kyc.id}.xlsx`);
+      XLSX.writeFile(workbook, `KYC_Detail_${pInfo.name || kyc.id}.xlsx`);
       toast({ title: "Export Successful", description: "KYC detail exported." });
     } catch (e) {
       toast({ title: "Export Failed", description: "Could not export KYC detail.", variant: "destructive" });
@@ -326,6 +357,7 @@ export default function KycDetailPage() {
             <InfoItem label="Designation" value={profInfo.designation} icon={UserSquare} />
             <InfoItem label="Education" value={profInfo.education} icon={BookUser} />
             <InfoItem label="Date of Joining" value={profInfo.date_of_joining} icon={CalendarDays} isDate={true} />
+            <InfoItem label="Date of Exit" value={profInfo.date_of_exit} icon={CalendarDays} isDate={true} />
             <InfoItem label="Aadhar Number" value={profInfo.aadhar_number} icon={CreditCard} />
             <InfoItem label="Name as per Aadhar" value={profInfo.name_as_per_aadhar} icon={ScanFace} />
             <InfoItem label="PAN Number" value={profInfo.pan_number} icon={CreditCard} />
@@ -355,9 +387,11 @@ export default function KycDetailPage() {
           <SectionTitle title="KYC Information & Status" icon={getStatusIcon()} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
             <InfoItem label="Current Status" value={kyc.status} capitalize icon={getStatusIcon()} />
-            {kyc.verifiedAt && <InfoItem label="Verified At" value={typeof kyc.verifiedAt === 'string' ? parseISO(kyc.verifiedAt) : kyc.verifiedAt as Date} icon={CalendarCheck2} isDate={true} />}
+            {kyc.verifiedAt && <InfoItem label="Verified At" value={kyc.verifiedAt as Date} icon={CalendarCheck2} isDate={true} />}
             {kyc.verified_by && <InfoItem label="Verified By" value={kyc.verified_by} icon={UserSquare} />}
             <InfoItem label="Remarks" value={kyc.remarks} icon={Edit3} />
+            {kyc.created_at && <InfoItem label="Created At" value={kyc.created_at as Date} icon={CalendarDays} isDate={true} />}
+            {kyc.updatedAt && <InfoItem label="Last Updated At" value={kyc.updatedAt as Date} icon={CalendarDays} isDate={true} />}
           </div>
         </CardContent>
         <CardFooter className="p-6 border-t flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
