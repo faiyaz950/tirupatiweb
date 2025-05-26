@@ -18,7 +18,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import * as XLSX from 'xlsx'; // For Excel export
+import * as XLSX from 'xlsx';
 
 const SectionTitle = ({ title, icon: Icon }: { title: string; icon: React.ElementType }) => (
   <div className="flex items-center space-x-2 mb-3 mt-4">
@@ -29,28 +29,40 @@ const SectionTitle = ({ title, icon: Icon }: { title: string; icon: React.Elemen
 
 const InfoItem = ({ label, value, capitalize = false, icon: Icon, isDate = false }: { label: string; value?: string | null | boolean | Date; capitalize?: boolean; icon?: React.ElementType, isDate?: boolean }) => {
   let displayValue: string | React.ReactNode = 'N/A';
-  if (typeof value === 'boolean') {
-    displayValue = value ? 'Yes' : 'No';
-  } else if (value instanceof Date) {
-    displayValue = format(value, "PPP"); // Format: Jun 6, 2024
-  } else if (isDate && typeof value === 'string') {
+
+  if (value instanceof Date) {
+    displayValue = format(value, "PPP");
+  } else if (isDate && typeof value === 'string' && value.trim() !== '') {
+    let formattedDate = '';
     try {
-      // Attempt to parse ISO strings like "1994-05-16T00:00:00.000Z" or "1994-05-16"
-      const date = parseISO(value); 
-      displayValue = format(date, "PPP");
-    } catch (e) {
-      // If parsing fails, try to format as if it's already a simple date string or just show original
-      try {
-        displayValue = format(new Date(value), "PPP");
-      } catch (formatErr) {
-        displayValue = value || 'N/A'; // Fallback to original string or N/A if formatting fails and value is falsy
+      // Try parsing with `new Date()` first, as it's more lenient with formats like "16 May 2011"
+      const dateObj = new Date(value);
+      if (!isNaN(dateObj.getTime())) { // Check if the date is valid
+        formattedDate = format(dateObj, "PPP");
+      } else {
+        // If `new Date()` fails, try `parseISO` for strict ISO formats
+        const isoDateObj = parseISO(value); // This might throw for non-ISO strings
+        if (!isNaN(isoDateObj.getTime())) {
+          formattedDate = format(isoDateObj, "PPP");
+        }
       }
+    } catch (error) {
+      // Errors during parsing or formatting, or parseISO threw
+      // console.warn("Date parsing/formatting error for:", value, error);
     }
-  }
-  else if (value || value === 0) { // This handles non-empty strings, numbers (including 0). Empty strings "" will result in 'N/A'.
+    // Show formatted date if successful, otherwise show original non-empty string.
+    // If formattedDate is still empty, it means all attempts failed for the non-empty 'value' string.
+    displayValue = formattedDate || value; 
+  } else if (typeof value === 'boolean') {
+    displayValue = value ? 'Yes' : 'No';
+  } else if (value || value === 0) { 
     displayValue = capitalize ? (String(value).charAt(0).toUpperCase() + String(value).slice(1)) : String(value);
   }
 
+  // If after all logic, displayValue is an empty string (e.g. because original 'value' was "" and not a date), make it 'N/A'
+  if (displayValue === "") {
+    displayValue = 'N/A';
+  }
 
   return (
     <div className="grid grid-cols-3 gap-2 py-1.5 items-start">
@@ -144,10 +156,11 @@ export default function KycDetailPage() {
       const dataToExport = [{
         "ID": kyc.id,
         "User ID": kyc.user_id,
+        // Personal Info
         "Name": kyc.personal_info?.name || 'N/A',
         "Prefix": kyc.personal_info?.prefix || 'N/A',
         "Gender": kyc.personal_info?.gender || 'N/A',
-        "Date of Birth": kyc.personal_info?.date_of_birth ? (typeof kyc.personal_info.date_of_birth === 'string' ? (kyc.personal_info.date_of_birth.includes('T') ? kyc.personal_info.date_of_birth.split('T')[0] : kyc.personal_info.date_of_birth) : format(kyc.personal_info.date_of_birth as Date, "yyyy-MM-dd")) : 'N/A',
+        "Date of Birth": kyc.personal_info?.date_of_birth || 'N/A', // Keep as string from DB
         "Age": kyc.personal_info?.age || 'N/A',
         "Marital Status": kyc.personal_info?.marital_status || 'N/A',
         "Father/Husband Name": kyc.personal_info?.father_husband_name || 'N/A',
@@ -157,28 +170,32 @@ export default function KycDetailPage() {
         "Address": kyc.personal_info?.address || 'N/A',
         "Pincode": kyc.personal_info?.pincode || 'N/A',
         "State": kyc.personal_info?.state || 'N/A',
+        // Professional Info
         "Company Name": kyc.professional_info?.company_name || 'N/A',
         "Department": kyc.professional_info?.department || 'N/A',
         "Designation": kyc.professional_info?.designation || 'N/A',
         "Education": kyc.professional_info?.education || 'N/A',
-        "Date of Joining": kyc.professional_info?.date_of_joining ? (typeof kyc.professional_info.date_of_joining === 'string' ? (kyc.professional_info.date_of_joining.includes('T') ? kyc.professional_info.date_of_joining.split('T')[0] : kyc.professional_info.date_of_joining) : format(kyc.professional_info.date_of_joining as Date, "yyyy-MM-dd")) : 'N/A',
+        "Date of Joining": kyc.professional_info?.date_of_joining || 'N/A', // Keep as string from DB
         "Aadhar Number": kyc.professional_info?.aadhar_number || 'N/A',
         "Name as per Aadhar": kyc.professional_info?.name_as_per_aadhar || 'N/A',
         "PAN Number": kyc.professional_info?.pan_number || 'N/A',
         "UAN Number": kyc.professional_info?.uan_number || 'N/A',
         "ESIC Number": kyc.professional_info?.esic_number || 'N/A',
         "Mobile Linked to Aadhar": kyc.professional_info?.mobile_linked_to_aadhar || 'N/A',
+        // Bank Info
         "Account Number": kyc.bank_info?.account_number || 'N/A',
         "Bank Name": kyc.bank_info?.bank_name || 'N/A',
         "Branch Name": kyc.bank_info?.branch_name || 'N/A',
         "IFSC Code": kyc.bank_info?.ifsc_code || 'N/A',
+        // Document Info
         "Aadhar Card URL": kyc.document_info?.aadhar_card_url || 'N/A',
         "PAN Card URL": kyc.document_info?.pan_card_url || 'N/A',
         "Photo URL": kyc.document_info?.photo_url || 'N/A',
+        // KYC Status
         "KYC Status": kyc.status,
         "Remarks": kyc.remarks || 'N/A',
-        "Created At": kyc.created_at ? (typeof kyc.created_at === 'string' ? kyc.created_at : format(kyc.created_at as Date, "yyyy-MM-dd HH:mm:ss")) : 'N/A',
-        "Verified At": kyc.verifiedAt ? (typeof kyc.verifiedAt === 'string' ? kyc.verifiedAt : format(kyc.verifiedAt as Date, "yyyy-MM-dd HH:mm:ss")) : 'N/A',
+        "Created At": kyc.created_at ? (typeof kyc.created_at === 'string' ? kyc.created_at : format(new Date(kyc.created_at), "yyyy-MM-dd HH:mm:ss")) : 'N/A',
+        "Verified At": kyc.verifiedAt ? (typeof kyc.verifiedAt === 'string' ? kyc.verifiedAt : format(new Date(kyc.verifiedAt), "yyyy-MM-dd HH:mm:ss")) : 'N/A',
         "Verified By": kyc.verified_by || 'N/A',
       }];
 
