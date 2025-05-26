@@ -43,11 +43,11 @@ const InfoItem = ({ label, value, capitalize = false, icon: Icon, isDate = false
       try {
         displayValue = format(new Date(value), "PPP");
       } catch (formatErr) {
-        displayValue = value; // Fallback to original string if all parsing/formatting fails
+        displayValue = value || 'N/A'; // Fallback to original string or N/A if formatting fails and value is falsy
       }
     }
   }
-  else if (value) { // This handles non-empty strings, numbers (including 0). Empty strings "" will result in 'N/A'.
+  else if (value || value === 0) { // This handles non-empty strings, numbers (including 0). Empty strings "" will result in 'N/A'.
     displayValue = capitalize ? (String(value).charAt(0).toUpperCase() + String(value).slice(1)) : String(value);
   }
 
@@ -143,7 +143,7 @@ export default function KycDetailPage() {
     try {
       const dataToExport = [{
         "ID": kyc.id,
-        "User ID": kyc.userId,
+        // User ID removed from export based on previous requests to remove from display
         "Name": kyc.personal_info?.name || 'N/A',
         "Prefix": kyc.personal_info?.prefix || 'N/A',
         "Gender": kyc.personal_info?.gender || 'N/A',
@@ -177,7 +177,7 @@ export default function KycDetailPage() {
         "Photo URL": kyc.document_info?.photo_url || 'N/A',
         "KYC Status": kyc.status,
         "Remarks": kyc.remarks || 'N/A',
-        "Submitted At": kyc.submittedAt ? (typeof kyc.submittedAt === 'string' ? kyc.submittedAt : format(kyc.submittedAt as Date, "yyyy-MM-dd HH:mm:ss")) : 'N/A',
+        // SubmittedAt removed from export based on previous requests to remove from display
         "Verified At": kyc.verifiedAt ? (typeof kyc.verifiedAt === 'string' ? kyc.verifiedAt : format(kyc.verifiedAt as Date, "yyyy-MM-dd HH:mm:ss")) : 'N/A',
         "Verified By": kyc.verifiedBy || 'N/A',
       }];
@@ -239,7 +239,7 @@ export default function KycDetailPage() {
         );
       case 'rejected':
         return (
-          <Badge variant="destructive" className="text-sm px-3 py-1 mt-2 sm:mt-0 bg-red-500 hover:bg-red-600">
+          <Badge variant="destructive" className="text-sm px-3 py-1 mt-2 sm:mt-0">
             <XCircle className="mr-1.5 h-4 w-4" /> Rejected
           </Badge>
         );
@@ -380,7 +380,3 @@ export default function KycDetailPage() {
     </div>
   );
 }
-
-    
-
-    
