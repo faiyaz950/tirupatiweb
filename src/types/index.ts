@@ -29,27 +29,24 @@ export interface Admin {
 export interface KycPersonalInfo {
   name?: string; // NAME
   prefix?: string; // PREFIX
-  dob?: string; // DATE OF BIRTH
+  date_of_birth?: string; // DATE OF BIRTH (Corrected from dob)
   age?: string; // AGE
   gender?: string; // GENDER
-  father_name?: string; // FATHER HUSBAND NAME (assuming father_name)
-  mobile?: string; // PHONE
-  alt_mobile?: string; // ALTERNATIVE PHONE
+  father_husband_name?: string; // FATHER HUSBAND NAME (Corrected from father_name)
+  phone?: string; // PHONE (Corrected from mobile)
+  alternative_phone?: string; // ALTERNATIVE PHONE (Corrected from alt_mobile)
   email?: string; // EMAIL
   marital_status?: string; // MARITAL STATUS
   address?: string; // ADDRESS
   pincode?: string; // PINCODE
   state?: string; // STATE
-  // mother_name removed
-  // permanent_address removed
-  // current_address removed
 }
 
 export interface KycProfessionalInfo {
   company_name?: string; // COMPANY NAME
   designation?: string; // DESIGNATION
   department?: string; // DEPARTMENT
-  joining_date?: string; // GvDATE OF JOINING (Date as string or Date object)
+  date_of_joining?: string; // DATE OF JOINING (Corrected from joining_date)
   pan_number?: string; // PAN NUMBER
   education?: string; // EDUCATION
   esic_number?: string; // ESIC NUMBER
@@ -57,8 +54,7 @@ export interface KycProfessionalInfo {
   name_as_per_aadhar?: string; // NAME AS PER AADHAR
   uan_number?: string; // UAN NUMBER
   aadhar_number?: string; // AADHAR NUMBER
-  // employee_id removed
-  // date_of_exit removed
+  date_of_exit?: string; // Added as it's in DB example, though might be empty
 }
 
 export interface KycBankInfo {
@@ -78,7 +74,7 @@ export interface KycDocumentInfo {
 
 export interface KYC {
   id: string;
-  userId: string; // ID of the user/employee this KYC belongs to
+  user_id: string; // ID of the user/employee this KYC belongs to (Matches DB: user_id)
   personal_info: KycPersonalInfo;
   professional_info: KycProfessionalInfo;
   bank_info: KycBankInfo;
@@ -86,10 +82,10 @@ export interface KYC {
   status: 'pending' | 'verified' | 'rejected';
   verified: boolean; // From Flutter code structure
   remarks?: string;
-  submittedAt: Timestamp | Date | string;
+  created_at: Timestamp | Date | string; // Changed from submittedAt to match DB
   verifiedAt?: Timestamp | Date | string | null;
-  verifiedBy?: string; // Admin ID who verified
-  // Add other KYC-specific fields
+  verified_by?: string; // Admin ID who verified (Matches DB: verified_by)
+  updatedAt?: Timestamp | Date | string; // Added as it's in DB example
 }
 
 export interface SuperAdminProfile {
@@ -100,4 +96,3 @@ export interface SuperAdminProfile {
   address?: string;
   createdAt: Timestamp | Date | string;
 }
-

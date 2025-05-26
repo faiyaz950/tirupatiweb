@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { 
     ArrowLeft, Loader2, AlertTriangle, User, Briefcase, Banknote, FileArchive, 
     CheckCircle, XCircle, HelpCircle, BookUser, Hash, SmartphoneNfc, 
-    ScanFace, CalendarDays, Cake, MapPin, CreditCard, Mail, Phone, Home, UserSquare, Landmark, Edit3, CalendarCheck2, UserCircle as UserCircleIcon, Users
+    ScanFace, CalendarDays, Cake, MapPin, CreditCard, Mail, Phone, Home, UserSquare, Landmark, Edit3, CalendarCheck2, UserCircle as UserCircleIcon, Users as UsersIcon
 } from 'lucide-react'; 
 import { format, parseISO } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
@@ -143,16 +143,16 @@ export default function KycDetailPage() {
     try {
       const dataToExport = [{
         "ID": kyc.id,
-        // User ID removed from export based on previous requests to remove from display
+        "User ID": kyc.user_id,
         "Name": kyc.personal_info?.name || 'N/A',
         "Prefix": kyc.personal_info?.prefix || 'N/A',
         "Gender": kyc.personal_info?.gender || 'N/A',
-        "Date of Birth": kyc.personal_info?.dob ? (typeof kyc.personal_info.dob === 'string' ? (kyc.personal_info.dob.includes('T') ? kyc.personal_info.dob.split('T')[0] : kyc.personal_info.dob) : format(kyc.personal_info.dob as Date, "yyyy-MM-dd")) : 'N/A',
+        "Date of Birth": kyc.personal_info?.date_of_birth ? (typeof kyc.personal_info.date_of_birth === 'string' ? (kyc.personal_info.date_of_birth.includes('T') ? kyc.personal_info.date_of_birth.split('T')[0] : kyc.personal_info.date_of_birth) : format(kyc.personal_info.date_of_birth as Date, "yyyy-MM-dd")) : 'N/A',
         "Age": kyc.personal_info?.age || 'N/A',
         "Marital Status": kyc.personal_info?.marital_status || 'N/A',
-        "Father/Husband Name": kyc.personal_info?.father_name || 'N/A',
-        "Phone": kyc.personal_info?.mobile || 'N/A',
-        "Alternative Phone": kyc.personal_info?.alt_mobile || 'N/A',
+        "Father/Husband Name": kyc.personal_info?.father_husband_name || 'N/A',
+        "Phone": kyc.personal_info?.phone || 'N/A',
+        "Alternative Phone": kyc.personal_info?.alternative_phone || 'N/A',
         "Email": kyc.personal_info?.email || 'N/A',
         "Address": kyc.personal_info?.address || 'N/A',
         "Pincode": kyc.personal_info?.pincode || 'N/A',
@@ -161,7 +161,7 @@ export default function KycDetailPage() {
         "Department": kyc.professional_info?.department || 'N/A',
         "Designation": kyc.professional_info?.designation || 'N/A',
         "Education": kyc.professional_info?.education || 'N/A',
-        "Date of Joining": kyc.professional_info?.joining_date ? (typeof kyc.professional_info.joining_date === 'string' ? (kyc.professional_info.joining_date.includes('T') ? kyc.professional_info.joining_date.split('T')[0] : kyc.professional_info.joining_date) : format(kyc.professional_info.joining_date as Date, "yyyy-MM-dd")) : 'N/A',
+        "Date of Joining": kyc.professional_info?.date_of_joining ? (typeof kyc.professional_info.date_of_joining === 'string' ? (kyc.professional_info.date_of_joining.includes('T') ? kyc.professional_info.date_of_joining.split('T')[0] : kyc.professional_info.date_of_joining) : format(kyc.professional_info.date_of_joining as Date, "yyyy-MM-dd")) : 'N/A',
         "Aadhar Number": kyc.professional_info?.aadhar_number || 'N/A',
         "Name as per Aadhar": kyc.professional_info?.name_as_per_aadhar || 'N/A',
         "PAN Number": kyc.professional_info?.pan_number || 'N/A',
@@ -177,9 +177,9 @@ export default function KycDetailPage() {
         "Photo URL": kyc.document_info?.photo_url || 'N/A',
         "KYC Status": kyc.status,
         "Remarks": kyc.remarks || 'N/A',
-        // SubmittedAt removed from export based on previous requests to remove from display
+        "Created At": kyc.created_at ? (typeof kyc.created_at === 'string' ? kyc.created_at : format(kyc.created_at as Date, "yyyy-MM-dd HH:mm:ss")) : 'N/A',
         "Verified At": kyc.verifiedAt ? (typeof kyc.verifiedAt === 'string' ? kyc.verifiedAt : format(kyc.verifiedAt as Date, "yyyy-MM-dd HH:mm:ss")) : 'N/A',
-        "Verified By": kyc.verifiedBy || 'N/A',
+        "Verified By": kyc.verified_by || 'N/A',
       }];
 
       const worksheet = XLSX.utils.json_to_sheet(dataToExport);
@@ -288,13 +288,13 @@ export default function KycDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
             <InfoItem label="Name" value={pInfo.name} icon={User}/>
             <InfoItem label="Prefix" value={pInfo.prefix} icon={UserCircleIcon}/>
-            <InfoItem label="Gender" value={pInfo.gender} icon={Users}/>
-            <InfoItem label="Date of Birth" value={pInfo.dob} icon={CalendarDays} isDate={true}/>
+            <InfoItem label="Gender" value={pInfo.gender} icon={UsersIcon}/>
+            <InfoItem label="Date of Birth" value={pInfo.date_of_birth} icon={CalendarDays} isDate={true}/>
             <InfoItem label="Age" value={pInfo.age} icon={Cake}/>
             <InfoItem label="Marital Status" value={pInfo.marital_status} icon={UserSquare}/>
-            <InfoItem label="Father/Husband Name" value={pInfo.father_name} icon={UserSquare}/>
-            <InfoItem label="Phone" value={pInfo.mobile} icon={Phone}/>
-            <InfoItem label="Alternative Phone" value={pInfo.alt_mobile} icon={SmartphoneNfc}/>
+            <InfoItem label="Father/Husband Name" value={pInfo.father_husband_name} icon={UserSquare}/>
+            <InfoItem label="Phone" value={pInfo.phone} icon={Phone}/>
+            <InfoItem label="Alternative Phone" value={pInfo.alternative_phone} icon={SmartphoneNfc}/>
             <InfoItem label="Email" value={pInfo.email} icon={Mail}/>
             <InfoItem label="Address" value={pInfo.address} icon={MapPin}/>
             <InfoItem label="Pincode" value={pInfo.pincode} icon={Hash}/>
@@ -308,7 +308,7 @@ export default function KycDetailPage() {
             <InfoItem label="Department" value={profInfo.department} icon={Briefcase} />
             <InfoItem label="Designation" value={profInfo.designation} icon={UserSquare} />
             <InfoItem label="Education" value={profInfo.education} icon={BookUser} />
-            <InfoItem label="Date of Joining" value={profInfo.joining_date} icon={CalendarDays} isDate={true} />
+            <InfoItem label="Date of Joining" value={profInfo.date_of_joining} icon={CalendarDays} isDate={true} />
             <InfoItem label="Aadhar Number" value={profInfo.aadhar_number} icon={CreditCard} />
             <InfoItem label="Name as per Aadhar" value={profInfo.name_as_per_aadhar} icon={ScanFace} />
             <InfoItem label="PAN Number" value={profInfo.pan_number} icon={CreditCard} />
@@ -339,7 +339,7 @@ export default function KycDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
             <InfoItem label="Current Status" value={kyc.status} capitalize icon={getStatusIcon()} />
             {kyc.verifiedAt && <InfoItem label="Verified At" value={typeof kyc.verifiedAt === 'string' ? parseISO(kyc.verifiedAt) : kyc.verifiedAt as Date} icon={CalendarCheck2} isDate={true} />}
-            {kyc.verifiedBy && <InfoItem label="Verified By" value={kyc.verifiedBy} icon={UserSquare} />}
+            {kyc.verified_by && <InfoItem label="Verified By" value={kyc.verified_by} icon={UserSquare} />}
             <InfoItem label="Remarks" value={kyc.remarks} icon={Edit3} />
           </div>
         </CardContent>
