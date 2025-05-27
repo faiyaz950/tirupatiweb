@@ -1,0 +1,17 @@
+[debug] [2025-05-27T08:04:57.717Z] ----------------------------------------------------------------------
+[debug] [2025-05-27T08:04:57.757Z] Command:       /nix/store/rbdrkcs5kkwpalxcd7c6bnm33lk2955n-nodejs-20.19.0/bin/node /nix/store/x1y0l2xj62jgmz6csprhhqzibvdggdpk-firebase-tools-14.3.1/lib/node_modules/firebase-tools/lib/bin/firebase.js use --add
+[debug] [2025-05-27T08:04:57.761Z] CLI Version:   14.3.1
+[debug] [2025-05-27T08:04:57.763Z] Platform:      linux
+[debug] [2025-05-27T08:04:57.767Z] Node Version:  v20.19.0
+[debug] [2025-05-27T08:04:57.767Z] Time:          Tue May 27 2025 08:04:57 GMT+0000 (Coordinated Universal Time)
+[debug] [2025-05-27T08:04:57.770Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-05-27T08:04:59.478Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-05-27T08:04:59.480Z] > authorizing via signed-in user (aliadnan425@gmail.com)
+[debug] [2025-05-27T08:04:59.487Z] No OAuth tokens found
+[debug] [2025-05-27T08:04:59.488Z] No OAuth tokens found
+[debug] [2025-05-27T08:04:59.491Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-05-27T08:04:59.491Z] > authorizing via signed-in user (aliadnan425@gmail.com)
+[debug] [2025-05-27T08:04:59.501Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=1000
+[debug] [2025-05-27T08:05:00.303Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
+[debug] [2025-05-27T08:05:00.307Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]

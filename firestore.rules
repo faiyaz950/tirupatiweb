@@ -1,0 +1,326 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if the user is a superadmin
+    function isSuperAdmin() {
+      return request.auth != null &&
+             exists(/databases/$(database)/documents/superadmins/$(request.auth.uid));
+    }
+
+    // Helper function to check if the user is an admin
+    function isAdmin() {
+      return request.auth != null &&
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Validation function for admin data
+    function validateAdminData() {
+      let data = request.resource.data;
+      return data.keys().hasAll([
+               'name', 'email', 'mobile', 'address', 'company', 'department',
+               'designation', 'availability', 'selectedCompany', 'createdAt'
+             ]) &&
+             data.name is string && data.name.size() >= 2 && data.name.size() <= 100 &&
+             data.email is string && data.email.size() > 0 && data.email.size() <= 100 &&
+             data.email.matches('^[^@]+@[^@]+\\.[^@]+$') &&
+             data.mobile is string && data.mobile.size() > 0 && data.mobile.size() <= 15 &&
+             data.address is string && data.address.size() > 0 && data.address.size() <= 500 &&
+             data.company is string && data.company.size() > 0 && data.company.size() <= 100 &&
+             data.department is string && data.department.size() > 0 && data.department.size() <= 100 &&
+             data.designation is string && data.designation.size() > 0 && data.designation.size() <= 100 &&
+             data.availability is string && data.availability.size() > 0 && data.availability.size() <= 50 &&
+             data.selectedCompany is string && (data.selectedCompany == 'Tirupati Industrial Services' || data.selectedCompany == 'Maxline Facilities') &&
+             data.createdAt is timestamp &&
+             (!data.keys().hasAny(['lastLogin']) || data.lastLogin == null || data.lastLogin is timestamp) &&
+             (!data.keys().hasAny(['last_updated']) || data.last_updated is timestamp) &&
+             (!data.keys().hasAny(['profile_pic_base64']) || data.profile_pic_base64 is string);
+    }
+
+    // Superadmins collection
+    match /superadmins/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId && isSuperAdmin();
+      allow create: if request.auth != null &&
+                       request.auth.token.email == 'superadmin@tiru.com' &&
+                       request.resource.data.email == request.auth.token.email &&
+                       request.resource.data.keys().hasAll(['name', 'email', 'mobile', 'address', 'createdAt']) &&
+                       request.resource.data.name is string &&
+                       request.resource.data.email is string &&
+                       request.resource.data.mobile is string &&
+                       request.resource.data.address is string &&
+                       request.resource.data.createdAt is timestamp;
+    }
+
+    // Admins collection
+    match /admins/{adminId} {
+      // SuperAdmin permissions
+      allow read: if isSuperAdmin();
+      allow create: if isSuperAdmin() && validateAdminData();
+      allow update: if isSuperAdmin() && validateAdminData();
+      allow delete: if isSuperAdmin();
+
+      // Admin permissions
+      allow read: if request.auth != null && request.auth.uid == adminId && isAdmin();
+      allow update: if request.auth != null && request.auth.uid == adminId && isAdmin() && validateAdminData();
+      allow delete: if false; // Explicitly deny delete for non-SuperAdmins
+    }
+
+    // KYC collection
+    match /kyc/{kycId} {
+      allow create: if isAdmin() &&
+                       request.resource.data.keys().hasAll([
+                         'personal_info', 'professional_info', 'bank_info', 'remarks',
+                         'created_at', 'verified', 'verified_by', 'documents', 'user_id'
+                       ]) &&
+                       request.resource.data.user_id == request.auth.uid &&
+                       request.resource.data.created_at is timestamp &&
+                       request.resource.data.verified is bool &&
+                       request.resource.data.verified_by is string &&
+                       request.resource.data.remarks is string &&
+                       request.resource.data.documents is list &&
+                       request.resource.data.personal_info is map &&
+                       request.resource.data.personal_info.keys().hasAll([
+                         'prefix', 'name', 'gender', 'marital_status', 'father_husband_name',
+                         'date_of_birth', 'age', 'email', 'phone', 'alternative_phone',
+                         'address', 'pincode', 'state'
+                       ]) &&
+                       request.resource.data.personal_info.prefix is string &&
+                       request.resource.data.personal_info.name is string &&
+                       request.resource.data.personal_info.gender is string &&
+                       request.resource.data.personal_info.marital_status is string &&
+                       request.resource.data.personal_info.father_husband_name is string &&
+                       request.resource.data.personal_info.date_of_birth is string &&
+                       request.resource.data.personal_info.age is string &&
+                       request.resource.data.personal_info.email is string &&
+                       request.resource.data.personal_info.email.matches('^[^@]+@[^@]+\\.[^@]+$') &&
+                       request.resource.data.personal_info.phone is string &&
+                       request.resource.data.personal_info.phone.matches('^\\d{10}$') &&
+                       request.resource.data.personal_info.alternative_phone is string &&
+                       (request.resource.data.personal_info.alternative_phone == '' ||
+                        request.resource.data.personal_info.alternative_phone.matches('^\\d{10}$')) &&
+                       request.resource.data.personal_info.address is string &&
+                       request.resource.data.personal_info.pincode is string &&
+                       request.resource.data.personal_info.pincode.matches('^\\d{6}$') &&
+                       request.resource.data.personal_info.state is string &&
+                       request.resource.data.professional_info is map &&
+                       request.resource.data.professional_info.keys().hasAll([
+                         'name_as_per_aadhar', 'mobile_linked_to_aadhar', 'education', 'company_name',
+                         'department', 'designation', 'date_of_joining', 'date_of_exit',
+                         'aadhar_number', 'pan_number', 'uan_number', 'esic_number'
+                       ]) &&
+                       request.resource.data.professional_info.name_as_per_aadhar is string &&
+                       request.resource.data.professional_info.mobile_linked_to_aadhar is string &&
+                       request.resource.data.professional_info.mobile_linked_to_aadhar.matches('^\\d{10}$') &&
+                       request.resource.data.professional_info.education is string &&
+                       request.resource.data.professional_info.company_name is string &&
+                       request.resource.data.professional_info.department is string &&
+                       request.resource.data.professional_info.designation is string &&
+                       request.resource.data.professional_info.date_of_joining is string &&
+                       request.resource.data.professional_info.date_of_exit is string &&
+                       request.resource.data.professional_info.aadhar_number is string &&
+                       request.resource.data.professional_info.aadhar_number.matches('^\\d{12}$') &&
+                       request.resource.data.professional_info.pan_number is string &&
+                       request.resource.data.professional_info.pan_number.matches('^[A-Z]{5}[0-9]{4}[A-Z]{1}$') &&
+                       request.resource.data.professional_info.uan_number is string &&
+                       (request.resource.data.professional_info.uan_number == '' ||
+                        request.resource.data.professional_info.uan_number.matches('^\\d{12}$')) &&
+                       request.resource.data.professional_info.esic_number is string &&
+                       (request.resource.data.professional_info.esic_number == '' ||
+                        request.resource.data.professional_info.esic_number.matches('^\\d{10}$')) &&
+                       request.resource.data.bank_info is map &&
+                       request.resource.data.bank_info.keys().hasAll([
+                         'bank_name', 'account_number', 'ifsc_code', 'branch_name'
+                       ]) &&
+                       request.resource.data.bank_info.bank_name is string &&
+                       request.resource.data.bank_info.account_number is string &&
+                       request.resource.data.bank_info.account_number.matches('^\\d{5,20}$') &&
+                       request.resource.data.bank_info.ifsc_code is string &&
+                       request.resource.data.bank_info.ifsc_code.matches('^[A-Z]{4}0[A-Z0-9]{6}$') &&
+                       request.resource.data.bank_info.branch_name is string;
+
+      allow update: if isAdmin() &&
+                       resource.data.user_id == request.auth.uid &&
+                       request.resource.data.user_id == resource.data.user_id &&
+                       request.resource.data.keys().hasAll([
+                         'personal_info', 'professional_info', 'bank_info', 'remarks',
+                         'created_at', 'verified', 'verified_by', 'documents', 'user_id'
+                       ]) &&
+                       request.resource.data.created_at is timestamp &&
+                       request.resource.data.verified is bool &&
+                       request.resource.data.verified_by is string &&
+                       request.resource.data.remarks is string &&
+                       request.resource.data.documents is list &&
+                       request.resource.data.personal_info is map &&
+                       request.resource.data.personal_info.keys().hasAll([
+                         'prefix', 'name', 'gender', 'marital_status', 'father_husband_name',
+                         'date_of_birth', 'age', 'email', 'phone', 'alternative_phone',
+                         'address', 'pincode', 'state'
+                       ]) &&
+                       request.resource.data.personal_info.prefix is string &&
+                       request.resource.data.personal_info.name is string &&
+                       request.resource.data.personal_info.gender is string &&
+                       request.resource.data.personal_info.marital_status is string &&
+                       request.resource.data.personal_info.father_husband_name is string &&
+                       request.resource.data.personal_info.date_of_birth is string &&
+                       request.resource.data.personal_info.age is string &&
+                       request.resource.data.personal_info.email is string &&
+                       request.resource.data.personal_info.email.matches('^[^@]+@[^@]+\\.[^@]+$') &&
+                       request.resource.data.personal_info.phone is string &&
+                       request.resource.data.personal_info.phone.matches('^\\d{10}$') &&
+                       request.resource.data.personal_info.alternative_phone is string &&
+                       (request.resource.data.personal_info.alternative_phone == '' ||
+                        request.resource.data.personal_info.alternative_phone.matches('^\\d{10}$')) &&
+                       request.resource.data.personal_info.address is string &&
+                       request.resource.data.personal_info.pincode is string &&
+                       request.resource.data.personal_info.pincode.matches('^\\d{6}$') &&
+                       request.resource.data.personal_info.state is string &&
+                       request.resource.data.professional_info is map &&
+                       request.resource.data.professional_info.keys().hasAll([
+                         'name_as_per_aadhar', 'mobile_linked_to_aadhar', 'education', 'company_name',
+                         'department', 'designation', 'date_of_joining', 'date_of_exit',
+                         'aadhar_number', 'pan_number', 'uan_number', 'esic_number'
+                       ]) &&
+                       request.resource.data.professional_info.name_as_per_aadhar is string &&
+                       request.resource.data.professional_info.mobile_linked_to_aadhar is string &&
+                       request.resource.data.professional_info.mobile_linked_to_aadhar.matches('^\\d{10}$') &&
+                       request.resource.data.professional_info.education is string &&
+                       request.resource.data.professional_info.company_name is string &&
+                       request.resource.data.professional_info.department is string &&
+                       request.resource.data.professional_info.designation is string &&
+                       request.resource.data.professional_info.date_of_joining is string &&
+                       request.resource.data.professional_info.date_of_exit is string &&
+                       request.resource.data.professional_info.aadhar_number is string &&
+                       request.resource.data.professional_info.aadhar_number.matches('^\\d{12}$') &&
+                       request.resource.data.professional_info.pan_number is string &&
+                       request.resource.data.professional_info.pan_number.matches('^[A-Z]{5}[0-9]{4}[A-Z]{1}$') &&
+                       request.resource.data.professional_info.uan_number is string &&
+                       (request.resource.data.professional_info.uan_number == '' ||
+                        request.resource.data.professional_info.uan_number.matches('^\\d{12}$')) &&
+                       request.resource.data.professional_info.esic_number is string &&
+                       (request.resource.data.professional_info.esic_number == '' ||
+                        request.resource.data.professional_info.esic_number.matches('^\\d{10}$')) &&
+                       request.resource.data.bank_info is map &&
+                       request.resource.data.bank_info.keys().hasAll([
+                         'bank_name', 'account_number', 'ifsc_code', 'branch_name'
+                       ]) &&
+                       request.resource.data.bank_info.bank_name is string &&
+                       request.resource.data.bank_info.account_number is string &&
+                       request.resource.data.bank_info.account_number.matches('^\\d{5,20}$') &&
+                       request.resource.data.bank_info.ifsc_code is string &&
+                       request.resource.data.bank_info.ifsc_code.matches('^[A-Z]{4}0[A-Z0-9]{6}$') &&
+                       request.resource.data.bank_info.branch_name is string;
+
+      allow read: if isAdmin() && 
+                     resource.data.user_id == request.auth.uid && 
+                     resource.data.verified == true;
+
+      allow read: if isSuperAdmin();
+
+allow update: if isAdmin() &&
+                   request.resource.data.diff(resource.data).changedKeys().hasOnly(['documents']) &&
+                   request.resource.data.documents is list &&
+                   request.resource.data.documents.size() <= 10 &&
+                   (request.resource.data.documents.size() == 0 ||
+                    request.resource.data.documents.all(doc, doc is string));
+
+      allow read: if isAdmin() &&
+                     request.query.where['verified'] == true &&
+                     'user_id' in request.query.where &&
+                     request.query.where['user_id'] == request.auth.uid &&
+                     request.query.orderBy.size() <= 2 &&
+                     ('created_at' in request.query.orderBy || '__name__' in request.query.orderBy) &&
+                     (request.query.limit <= 50);
+
+      allow read: if isSuperAdmin() &&
+                     request.query.where['verified'] == true &&
+                     request.query.orderBy.size() <= 2 &&
+                     ('created_at' in request.query.orderBy || '__name__' in request.query.orderBy) &&
+                     (request.query.limit <= 50);
+
+      allow update: if isSuperAdmin() &&
+                       request.resource.data.diff(resource.data).changedKeys().hasOnly(['documents']) &&
+                       request.resource.data.documents is list &&
+                       request.resource.data.documents.size() <= 10 &&
+                       (request.resource.data.documents.size() == 0 ||
+                        request.resource.data.documents.all(doc, doc is string));
+
+      allow update: if isSuperAdmin() &&
+                       request.resource.data.keys().hasAll([
+                         'personal_info', 'professional_info', 'bank_info', 'remarks',
+                         'created_at', 'verified', 'verified_by', 'documents', 'user_id'
+                       ]) &&
+                       request.resource.data.verified is bool &&
+                       request.resource.data.verified_by is string &&
+                       request.resource.data.remarks is string &&
+                       request.resource.data.documents is list &&
+                       request.resource.data.created_at is timestamp &&
+                       request.resource.data.user_id is string &&
+                       request.resource.data.personal_info is map &&
+                       request.resource.data.personal_info.keys().hasAll([
+                         'prefix', 'name', 'gender', 'marital_status', 'father_husband_name',
+                         'date_of_birth', 'age', 'email', 'phone', 'alternative_phone',
+                         'address', 'pincode', 'state'
+                       ]) &&
+                       request.resource.data.personal_info.prefix is string &&
+                       request.resource.data.personal_info.name is string &&
+                       request.resource.data.personal_info.gender is string &&
+                       request.resource.data.personal_info.marital_status is string &&
+                       request.resource.data.personal_info.father_husband_name is string &&
+                       request.resource.data.personal_info.date_of_birth is string &&
+                       request.resource.data.personal_info.age is string &&
+                       request.resource.data.personal_info.email is string &&
+                       request.resource.data.personal_info.email.matches('^[^@]+@[^@]+\\.[^@]+$') &&
+                       request.resource.data.personal_info.phone is string &&
+                       request.resource.data.personal_info.phone.matches('^\\d{10}$') &&
+                       request.resource.data.personal_info.alternative_phone is string &&
+                       (request.resource.data.personal_info.alternative_phone == '' ||
+                        request.resource.data.personal_info.alternative_phone.matches('^\\d{10}$')) &&
+                       request.resource.data.personal_info.address is string &&
+                       request.resource.data.personal_info.pincode is string &&
+                       request.resource.data.personal_info.pincode.matches('^\\d{6}$') &&
+                       request.resource.data.personal_info.state is string &&
+                       request.resource.data.professional_info is map &&
+                       request.resource.data.professional_info.keys().hasAll([
+                         'name_as_per_aadhar', 'mobile_linked_to_aadhar', 'education', 'company_name',
+                         'department', 'designation', 'date_of_joining', 'date_of_exit',
+                         'aadhar_number', 'pan_number', 'uan_number', 'esic_number'
+                       ]) &&
+                       request.resource.data.professional_info.name_as_per_aadhar is string &&
+                       request.resource.data.professional_info.mobile_linked_to_aadhar is string &&
+                       request.resource.data.professional_info.mobile_linked_to_aadhar.matches('^\\d{10}$') &&
+                       request.resource.data.professional_info.education is string &&
+                       request.resource.data.professional_info.company_name is string &&
+                       request.resource.data.professional_info.department is string &&
+                       request.resource.data.professional_info.designation is string &&
+                       request.resource.data.professional_info.date_of_joining is string &&
+                       request.resource.data.professional_info.date_of_exit is string &&
+                       request.resource.data.professional_info.aadhar_number is string &&
+                       request.resource.data.professional_info.aadhar_number.matches('^\\d{12}$') &&
+                       request.resource.data.professional_info.pan_number is string &&
+                       request.resource.data.professional_info.pan_number.matches('^[A-Z]{5}[0-9]{4}[A-Z]{1}$') &&
+                       request.resource.data.professional_info.uan_number is string &&
+                       (request.resource.data.professional_info.uan_number == '' ||
+                        request.resource.data.professional_info.uan_number.matches('^\\d{12}$')) &&
+                       request.resource.data.professional_info.esic_number is string &&
+                       (request.resource.data.professional_info.esic_number == '' ||
+                        request.resource.data.professional_info.esic_number.matches('^\\d{10}$')) &&
+                       request.resource.data.bank_info is map &&
+                       request.resource.data.bank_info.keys().hasAll([
+                         'bank_name', 'account_number', 'ifsc_code', 'branch_name'
+                       ]) &&
+                       request.resource.data.bank_info.bank_name is string &&
+                       request.resource.data.bank_info.account_number is string &&
+                       request.resource.data.bank_info.account_number.matches('^\\d{5,20}$') &&
+                       request.resource.data.bank_info.ifsc_code is string &&
+                       request.resource.data.bank_info.ifsc_code.matches('^[A-Z]{4}0[A-Z0-9]{6}$') &&
+                       request.resource.data.bank_info.branch_name is string;
+
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
