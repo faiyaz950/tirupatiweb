@@ -108,3 +108,12 @@ INFO: Detected HTTP/2 connection.
 [warn] ⚠  firestore.rules:246:61 - WARNING Invalid variable name: doc. 
 [warn] ⚠  firestore.rules:246:66 - WARNING Invalid variable name: doc. 
 [info] ✔  firestore: Rules updated. 
+[debug] [2025-05-28T10:10:17.677Z] May 28, 2025 10:10:17 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected non-HTTP/2 connection.
+ {"metadata":{"emulator":{"name":"firestore"},"message":"May 28, 2025 10:10:17 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected non-HTTP/2 connection.\n"}}
+[debug] [2025-05-28T10:10:18.359Z] May 28, 2025 10:10:18 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketChannelHandler initChannel
+INFO: Connected to new websocket client
+ {"metadata":{"emulator":{"name":"firestore"},"message":"May 28, 2025 10:10:18 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketChannelHandler initChannel\nINFO: Connected to new websocket client\n"}}
+[debug] [2025-05-28T10:10:23.098Z] May 28, 2025 10:10:23 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketChannelHandler initChannel
+INFO: Connected to new websocket client
+ {"metadata":{"emulator":{"name":"firestore"},"message":"May 28, 2025 10:10:23 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketChannelHandler initChannel\nINFO: Connected to new websocket client\n"}}
