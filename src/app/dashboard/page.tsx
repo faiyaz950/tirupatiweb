@@ -56,7 +56,7 @@ export default function SuperAdminDashboardPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const apkDownloadLink = "https://drive.usercontent.google.com/download?id=1gw0TOOy8P9orsmTjU-_O0ASG6sM6vPjL&export=download&authuser=0";
+  const apkDownloadLink = "https://drive.google.com/drive/u/2/folders/1VQbws5qZ4dcd_w8iV973s8YN9gGePE0z";
 
   const { data: superAdminData, isLoading: isLoadingProfile, error: profileError } = useQuery<SuperAdminProfile | null>({
     queryKey: ['superAdminProfile', user?.uid],
