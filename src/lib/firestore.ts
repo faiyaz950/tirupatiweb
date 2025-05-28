@@ -5,7 +5,7 @@ import {
   setDoc,
   addDoc,
   updateDoc,
-  deleteDoc,
+  deleteDoc, // Added deleteDoc
   collection,
   getDocs,
   query,
@@ -124,21 +124,27 @@ export const updateAdminInFirestore = async (adminId: string, data: Partial<Admi
   await updateDoc(adminRef, data);
 };
 
+export const deleteAdminById = async (adminId: string): Promise<void> => {
+  const adminRef = doc(db, 'admins', adminId);
+  await deleteDoc(adminRef);
+};
+
+
 // KYC specific functions
 export const getAllKycRecords = async (filters: { searchQuery?: string; status?: string } = {}): Promise<KYC[]> => {
   const kycCollectionRef = collection(db, 'kyc');
   let q = query(kycCollectionRef);
 
-  if (filters.status) {
+  if (filters.status && filters.status !== 'all') {
      q = query(kycCollectionRef, where('status', '==', filters.status));
   }
   
   const querySnapshot: QuerySnapshot<DocumentData> = await getDocs(q);
   
   let kycDocs = querySnapshot.docs.map(docSnap => {
-    let data = docSnap.data();
+    let data = docSnap.data() as KYC; // Cast to KYC
     // Manually parse top-level timestamps for KYC list items
-    if (data.created_at instanceof Timestamp) { // Corrected from submittedAt
+    if (data.created_at instanceof Timestamp) { 
       data.created_at = data.created_at.toDate().toISOString();
     }
     if (data.verifiedAt instanceof Timestamp) {
@@ -148,7 +154,7 @@ export const getAllKycRecords = async (filters: { searchQuery?: string; status?:
       data.updatedAt = data.updatedAt.toDate().toISOString();
     }
     // Nested objects like personal_info often don't have timestamps directly, but their parent might
-    return { id: docSnap.id, ...data } as KYC;
+    return { ...data, id: docSnap.id }; // Ensure id is included
   });
 
   if (filters.searchQuery) {
@@ -168,9 +174,9 @@ export const getKycById = async (kycId: string): Promise<KYC | null> => {
   const docRef = doc(db, 'kyc', kycId);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    let data = docSnap.data();
+    let data = docSnap.data() as KYC; // Cast to KYC
     // Manually parse all known top-level and nested timestamp fields for KYC detail
-    if (data.created_at instanceof Timestamp) { // Corrected from submittedAt
+    if (data.created_at instanceof Timestamp) { 
       data.created_at = data.created_at.toDate().toISOString();
     }
     if (data.verifiedAt instanceof Timestamp) {
@@ -179,8 +185,15 @@ export const getKycById = async (kycId: string): Promise<KYC | null> => {
     if (data.updatedAt instanceof Timestamp) {
       data.updatedAt = data.updatedAt.toDate().toISOString();
     }
-    // The string date fields like personal_info.date_of_birth are already strings from DB.
-    return { id: docSnap.id, ...data } as KYC;
+
+    // Parse date_of_birth and date_of_joining if they exist
+    if (data.personal_info && data.personal_info.date_of_birth && typeof data.personal_info.date_of_birth === 'string') {
+      // No need to parse again here if it's already a string, InfoItem handles display
+    }
+    if (data.professional_info && data.professional_info.date_of_joining && typeof data.professional_info.date_of_joining === 'string') {
+      // No need to parse again here if it's already a string, InfoItem handles display
+    }
+    return { ...data, id: docSnap.id }; // Ensure id is included
   }
   return null;
 };
@@ -188,15 +201,13 @@ export const getKycById = async (kycId: string): Promise<KYC | null> => {
 export const updateKycRecord = async (kycId: string, data: Partial<KYC>): Promise<void> => {
     const kycRef = doc(db, 'kyc', kycId);
     const updateData:any = { ...data };
-    updateData.updatedAt = serverTimestamp(); // Ensure this field is also in your KYC type if you want to track it
+    updateData.updatedAt = serverTimestamp(); 
     
     if (data.status === 'verified') {
         updateData.verifiedAt = serverTimestamp();
     } else if (data.status === 'rejected' || data.status === 'pending') {
-        updateData.verifiedAt = null; // Explicitly set to null if reverting from verified or just not verified
+        updateData.verifiedAt = null; 
     }
-    // Note: 'verified' boolean field might be redundant if 'status' is the source of truth.
-    // Keeping it for now based on existing type, but consider aligning.
     updateData.verified = data.status === 'verified';
 
 
