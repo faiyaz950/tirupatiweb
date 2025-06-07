@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userProfile: UserProfile = {
           uid: firebaseUser.uid,
           email: firebaseUser.email,
-          name: firebaseUser.displayName,
+          name: firebaseUser.displayName as string | undefined,
           photoURL: firebaseUser.photoURL,
           isSuperAdmin: isAdmin,
         };
