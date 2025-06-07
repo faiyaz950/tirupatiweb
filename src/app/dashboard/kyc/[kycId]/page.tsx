@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getKycById, updateKycRecord } from '@/lib/firestore';
+import { getKycById, updateKycRecord, db } from '@/lib/firestore';
 import type { KYC, KycPersonalInfo, KycProfessionalInfo, KycBankInfo } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import * as XLSX from 'xlsx';
-import type { Timestamp } from 'firebase/firestore';
+import { collection, getDocs, type Timestamp } from 'firebase/firestore';
 
 const SectionTitle = ({ title, icon: Icon }: { title: string; icon: React.ElementType }) => (
   <div className="flex items-center space-x-2 mb-3 mt-4">
@@ -52,14 +52,17 @@ const InfoItem = ({ label, value, capitalize = false, icon: Icon, isDate = false
     }
     displayValue = formattedDate || value; // Show formatted date or original string if formatting failed
   } else if (typeof value === 'boolean') {
-    displayValue = value ? 'Yes' : 'No';
-  } else if (value || value === 0) { // Handles numbers including 0
-    displayValue = capitalize ? (String(value).charAt(0).toUpperCase() + String(value).slice(1)) : String(value);
-  }
+  displayValue = value ? 'Yes' : 'No';
+} else if (
+  value !== null &&
+  value !== undefined &&
+  (typeof value === 'number' ? value === 0 || Boolean(value) : Boolean(value))
+) {
+  displayValue = capitalize
+    ? String(value).charAt(0).toUpperCase() + String(value).slice(1)
+    : String(value);
+}
 
-  if (displayValue === "") { // Ensure empty string from DB becomes N/A
-    displayValue = 'N/A';
-  }
 
   return (
     <div className="grid grid-cols-3 gap-2 py-1.5 items-start">
@@ -379,5 +382,3 @@ export default function KycDetailPage() {
     </div>
   );
 }
-
-    
