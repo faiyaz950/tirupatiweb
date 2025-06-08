@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2, LockKeyhole } from "lucide-react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, SUPER_ADMIN_EMAIL } from "@/lib/firebase";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import { WaveHeader } from "@/components/ui/wave-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -27,24 +27,23 @@ const formSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
 });
 
-interface LoginFormProps {
-  error?: string | string[] | undefined;
-}
-
 export function LoginForm() {
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // Check for URL parameters after component mounts (client-side only)
   useEffect(() => {
-    const error = searchParams.get("error");
-    if (error === "authFailed") {
-      setErrorMessage("Access denied. Only SuperAdmin can log in.");
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const error = urlParams.get("error");
+      if (error === "authFailed") {
+        setErrorMessage("Access denied. Only SuperAdmin can log in.");
+      }
     }
-  }, [searchParams]);
+  }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
