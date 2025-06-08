@@ -31,14 +31,16 @@ interface LoginFormProps {
   error?: string | string[] | undefined;
 }
 
-export function LoginForm({ error }: props: LoginFormProps) {
-  const { toast } = useToast();
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(
-    error === "authFailed" ? "Access denied. Only SuperAdmin can log in." : null
-  );
+export function LoginForm() {
+  const searchParams = useSearchParams();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error === "authFailed") {
+      setErrorMessage("Access denied. Only SuperAdmin can log in.");
+    }
+  }, [searchParams]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
