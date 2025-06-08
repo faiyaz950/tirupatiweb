@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { LoginForm } from "@/components/auth/LoginForm";
+import dynamic from "next/dynamic";
 
 // Loading component for better UX
 function LoginLoading() {
@@ -21,6 +21,12 @@ function LoginLoading() {
     </div>
   );
 }
+
+// Dynamically import LoginForm to prevent SSR issues
+const LoginForm = dynamic(() => import("@/components/auth/LoginForm").then(mod => ({ default: mod.LoginForm })), {
+  loading: () => <LoginLoading />,
+  ssr: false
+});
 
 export default function LoginPage() {
   return (
