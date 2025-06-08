@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2, LockKeyhole } from "lucide-react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, SUPER_ADMIN_EMAIL } from "@/lib/firebase";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import { WaveHeader } from "@/components/ui/wave-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -27,22 +27,34 @@ const formSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
 });
 
+interface LoginFormProps {
+  error?: string | string[] | undefined;
+}
+
+// Separate component for search params logic
+function SearchParamsHandler({ onError }: { onError: (error: string | null) => void }) {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error === "authFailed") {
+      onError("Access denied. Only SuperAdmin can log in.");
+    }
+  }, [searchParams, onError]);
+
+  return null;
+}
+
 export function LoginForm() {
   const { toast } = useToast();
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
-  // Check for URL parameters after component mounts (client-side only)
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const urlParams = new URLSearchParams(window.location.search);
-      const error = urlParams.get("error");
-      if (error === "authFailed") {
-        setErrorMessage("Access denied. Only SuperAdmin can log in.");
-      }
-    }
+    setIsMounted(true);
   }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -88,8 +100,31 @@ export function LoginForm() {
     }
   }
 
+  // Don't render until mounted to avoid hydration issues
+  if (!isMounted) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <WaveHeader
+          title="Welcome Back"
+          subtitle="Sign in to manage your platform"
+          icon={<LockKeyhole size={48} className="text-white" />}
+        />
+        <main className="flex-grow flex items-center justify-center p-4 -mt-16 sm:-mt-20 md:-mt-24 relative z-10">
+          <Card className="w-full max-w-md shadow-2xl">
+            <CardContent className="flex items-center justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
+      {/* Handle search params only on client side */}
+      <SearchParamsHandler onError={setErrorMessage} />
+      
       <WaveHeader
         title="Welcome Back"
         subtitle="Sign in to manage your platform"
