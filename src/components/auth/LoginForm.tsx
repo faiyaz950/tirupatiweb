@@ -17,8 +17,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2, LockKeyhole } from "lucide-react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, SUPER_ADMIN_EMAIL } from "@/lib/firebase";
-import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState, useEffect } from "react";
 import { WaveHeader } from "@/components/ui/wave-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
@@ -32,8 +32,12 @@ interface LoginFormProps {
 }
 
 export function LoginForm() {
+  const { toast } = useToast();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const error = searchParams.get("error");
