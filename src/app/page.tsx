@@ -1,8 +1,8 @@
 import { Suspense } from "react";
-import dynamic from "next/dynamic";
+import { LoginForm } from "@/components/auth/LoginForm";
 
-// Loading component for better UX
-function LoginLoading() {
+// Loading component
+function PageLoading() {
   return (
     <div className="flex flex-col min-h-screen">
       <div className="flex-grow flex items-center justify-center p-4">
@@ -22,16 +22,15 @@ function LoginLoading() {
   );
 }
 
-// Dynamically import LoginForm to prevent SSR issues
-const LoginForm = dynamic(() => import("@/components/auth/LoginForm").then(mod => ({ default: mod.LoginForm })), {
-  loading: () => <LoginLoading />,
-  ssr: false
-});
+// Use searchParams prop instead of useSearchParams hook
+interface PageProps {
+  searchParams: { [key: string]: string | string[] | undefined };
+}
 
-export default function LoginPage() {
+export default function HomePage({ searchParams }: PageProps) {
   return (
-    <Suspense fallback={<LoginLoading />}>
-      <LoginForm />
+    <Suspense fallback={<PageLoading />}>
+      <LoginForm searchParams={searchParams} />
     </Suspense>
   );
 }
