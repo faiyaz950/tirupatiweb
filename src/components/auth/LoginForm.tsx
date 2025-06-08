@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,33 +17,28 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Loader2, LockKeyhole } from "lucide-react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, SUPER_ADMIN_EMAIL } from "@/lib/firebase";
-import { useRouter, useSearchParams } from "next/navigation";
-import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import React, { useState } from "react";
 import { WaveHeader } from "@/components/ui/wave-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
 });
 
-export function LoginForm() {
+interface LoginFormProps {
+  error?: string | string[] | undefined;
+}
+
+export function LoginForm({ error }: props: LoginFormProps) {
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-
-  useEffect(() => {
-    const error = searchParams.get('error');
-    if (error === 'authFailed') {
-      setErrorMessage("Access denied. Only SuperAdmin can log in.");
-    }
-  }, [searchParams]);
-
+  const [errorMessage, setErrorMessage] = useState<string | null>(
+    error === "authFailed" ? "Access denied. Only SuperAdmin can log in." : null
+  );
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -73,9 +67,9 @@ export function LoginForm() {
     } catch (error: any) {
       console.error("Login failed:", error);
       let message = "Login failed. Please check your credentials.";
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+      if (error.code === "auth/invalid-credential" || error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
         message = "Invalid email or password.";
-      } else if (error.code === 'auth/too-many-requests') {
+      } else if (error.code === "auth/too-many-requests") {
         message = "Too many failed login attempts. Please try again later.";
       }
       setErrorMessage(message);
@@ -91,10 +85,10 @@ export function LoginForm() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <WaveHeader 
+      <WaveHeader
         title="Welcome Back"
         subtitle="Sign in to manage your platform"
-        icon={<LockKeyhole size={48} className="text-white"/>}
+        icon={<LockKeyhole size={48} className="text-white" />}
       />
       <main className="flex-grow flex items-center justify-center p-4 -mt-16 sm:-mt-20 md:-mt-24 relative z-10">
         <Card className="w-full max-w-md shadow-2xl">
@@ -112,9 +106,10 @@ export function LoginForm() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="email" 
-                          placeholder="superadmin@example.com" {...field} 
+                        <Input
+                          type="email"
+                          placeholder="superadmin@example.com"
+                          {...field}
                           className="text-base"
                           aria-label="Email"
                         />
@@ -131,9 +126,10 @@ export function LoginForm() {
                       <FormLabel>Password</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Input 
-                            type={showPassword ? "text" : "password"} 
-                            placeholder="••••••••" {...field} 
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            {...field}
                             className="text-base pr-10"
                             aria-label="Password"
                           />
