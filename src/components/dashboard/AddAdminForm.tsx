@@ -18,9 +18,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Eye, EyeOff } from "lucide-react";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as firebaseSignOut, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
-import { auth, db } from "@/lib/firebase"; // db is imported
-import { doc, collection } from "firebase/firestore"; // Added doc and collection imports
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut as firebaseSignOut, 
+  EmailAuthProvider, 
+  reauthenticateWithCredential,
+  deleteUser,
+  type UserCredential
+} from "firebase/auth";
+import { auth } from "@/lib/firebase"; // db is imported via addAdminToFirestore
 import { addAdminToFirestore } from "@/lib/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import React, { useState } from "react";
@@ -37,17 +44,17 @@ const formSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
   mobile: z.string().min(10, { message: "Mobile number must be at least 10 digits." }).max(15),
   address: z.string().min(5, { message: "Address is required." }).max(500),
-  company: z.string().min(2, {message: "Company name is required"}).max(100), // This is the text field for company
+  company: z.string().min(2, {message: "Company name is required"}).max(100),
   department: z.string().min(2, {message: "Department is required"}).max(100),
   designation: z.string().min(2, {message: "Designation is required"}).max(100),
   availability: z.string().min(2, {message: "Availability is required"}).max(50),
-  selectedCompany: z.string({ required_error: "Please select a company for the admin." }).min(1, {message: "Please select a company for the admin."}), // Ensure non-empty string
+  selectedCompany: z.string({ required_error: "Please select a company for the admin." }).min(1, {message: "Please select a company for the admin."}),
   superAdminPassword: z.string().min(6, { message: "Super Admin password is required." }),
 });
 
 export function AddAdminForm() {
   const { toast } = useToast();
-  const { user: superAdminUser } = useAuth(); // This is the currently logged-in super admin
+  const { user: superAdminUser, loading: authLoading } = useAuth(); // This is the currently logged-in super admin
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showSuperAdminPassword, setShowSuperAdminPassword] = useState(false);
@@ -71,67 +78,113 @@ export function AddAdminForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (authLoading) {
+      setErrorMessage("Authentication is still loading. Please wait and try again.");
+      toast({ title: "Authentication Busy", description: "Please wait a moment.", variant: "default" });
+      return;
+    }
     if (!superAdminUser || !superAdminUser.email) {
       setErrorMessage("Super Admin not authenticated. Please re-login.");
       toast({ title: "Authentication Error", description: "Super Admin not authenticated.", variant: "destructive" });
-      setIsLoading(false);
       return;
     }
 
     setIsLoading(true);
     setErrorMessage(null);
-    let newAdminUID: string | undefined;
+
+    const originalSuperAdminEmail = superAdminUser.email; // Store for re-login
 
     try {
-      // 1. Re-authenticate Super Admin (important for sensitive operations)
-      const credential = EmailAuthProvider.credential(superAdminUser.email, values.superAdminPassword);
+      // 1. Re-authenticate Super Admin
+      const credential = EmailAuthProvider.credential(originalSuperAdminEmail, values.superAdminPassword);
       await reauthenticateWithCredential(auth.currentUser!, credential);
       
+      // 2. Create new admin user in Firebase Auth
+      let newAdminUserCredential: UserCredential;
       try {
-        const adminDocRef = doc(collection(db, "admins"));
-        newAdminUID = adminDocRef.id;
-        
-         toast({
-          title: "Admin Profile Data Ready",
-          description: "Admin profile data prepared. Firebase Auth user creation should be handled separately or via Firebase Functions for security and proper auth flow.",
-          duration: 7000,
-        });
-
+        newAdminUserCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       } catch (authError: any) {
-        console.error("Error during conceptual admin auth creation step:", authError);
-        setErrorMessage(`Auth Setup Error: ${authError.message}. Note: Admin user creation from client by another admin is complex and not fully implemented here.`);
+        let specificErrorMessage = authError.message;
+        if (authError.code === 'auth/email-already-in-use') {
+          specificErrorMessage = "This email address is already in use by another account.";
+        } else if (authError.code === 'auth/weak-password') {
+          specificErrorMessage = "The password is too weak. Please use a stronger password.";
+        }
+        setErrorMessage(`Failed to create admin Auth user: ${specificErrorMessage}`);
+        toast({ title: "Auth Creation Failed", description: specificErrorMessage, variant: "destructive" });
+        setIsLoading(false);
+        // SuperAdmin session should still be active here, no need to re-login superadmin yet.
+        return;
+      }
+
+      const newAdminAuthUser = newAdminUserCredential.user;
+      if (!newAdminAuthUser) {
+        setErrorMessage("Admin Auth user creation returned no user. Please try again.");
+        toast({ title: "Auth Creation Error", description: "No user object returned after creation.", variant: "destructive" });
+        setIsLoading(false);
+        // SuperAdmin session should still be active.
+        return;
+      }
+
+      // At this point, newAdminAuthUser is the auth.currentUser
+
+      // 3. Save admin details to Firestore
+      try {
+        await addAdminToFirestore(newAdminAuthUser.uid, { // Use Auth UID
+          name: values.name,
+          email: values.email, // Store the email used for Auth
+          mobile: values.mobile,
+          address: values.address,
+          company: values.company,
+          department: values.department,
+          designation: values.designation,
+          availability: values.availability,
+          selectedCompany: values.selectedCompany,
+        });
+      } catch (firestoreError: any) {
+        setErrorMessage(`Admin Auth user created (UID: ${newAdminAuthUser.uid}) but profile save to Firestore failed: ${firestoreError.message}. Attempting to delete Auth user.`);
+        toast({ title: "Firestore Save Failed", description: `Profile not saved. Attempting Auth rollback. Error: ${firestoreError.message}`, variant: "destructive", duration: 7000 });
+        
+        // Attempt to roll back Auth user creation
+        // newAdminAuthUser is currently auth.currentUser
+        try {
+          await deleteUser(newAdminAuthUser); // `deleteUser` requires the user to be the current user
+          toast({ title: "Auth Rollback Successful", description: `Admin Auth user ${values.email} deleted.`});
+        } catch (deleteError: any) {
+          setErrorMessage(`Firestore save failed AND Auth user rollback failed: ${deleteError.message}. Please manually delete Auth user: ${values.email}.`);
+          toast({ title: "Critical Error", description: `Firestore save failed and Auth user rollback failed. Manual cleanup needed for ${values.email}. Error: ${deleteError.message}`, variant: "destructive", duration: 10000 });
+        }
+        
+        // Regardless of rollback success/failure, ensure SuperAdmin session is restored.
+        // auth.currentUser might be null or the newAdminAuthUser if delete failed.
+        // Sign out current user (if any, could be newAdmin or null)
+        if(auth.currentUser) await firebaseSignOut(auth); 
+        // Sign SuperAdmin back in
+        await signInWithEmailAndPassword(auth, originalSuperAdminEmail, values.superAdminPassword);
+        
         setIsLoading(false);
         return;
       }
 
-      if (!newAdminUID) {
-        setErrorMessage("Failed to generate admin ID.");
-        setIsLoading(false);
-        return;
-      }
-
-      await addAdminToFirestore(newAdminUID, {
-        name: values.name,
-        email: values.email, 
-        mobile: values.mobile,
-        address: values.address,
-        company: values.company,
-        department: values.department,
-        designation: values.designation,
-        availability: values.availability,
-        selectedCompany: values.selectedCompany,
-      });
+      // 4. Successfully created Auth user and Firestore profile.
+      // Sign out the new admin (who is currently auth.currentUser)
+      // and sign back in the SuperAdmin.
+      await firebaseSignOut(auth); // Signs out newAdminAuthUser
+      await signInWithEmailAndPassword(auth, originalSuperAdminEmail, values.superAdminPassword); // Signs SuperAdmin back in
 
       toast({
-        title: "Admin Profile Created",
-        description: `${values.name} has been added to Firestore. Ensure Firebase Auth user is also created.`,
+        title: "Admin Account Created",
+        description: `${values.name} has been successfully added as an admin.`,
       });
       form.reset();
-    } catch (error: any) {
-      console.error("Failed to add admin:", error);
-      let message = "Failed to add admin. Please try again.";
-      if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        message = "Super Admin password verification failed.";
+
+    } catch (error: any) { // Catches errors from SuperAdmin re-auth or final SuperAdmin sign-in
+      console.error("Overall error in admin creation:", error);
+      let message = "An unexpected error occurred during admin creation.";
+      if (error.code === 'auth/wrong-password' && error.message.includes('reauthenticate')) {
+        message = "Super Admin password verification failed during re-authentication.";
+      } else if (error.code === 'auth/wrong-password' && error.message.includes('signInWithEmailAndPassword')) {
+        message = "Failed to restore Super Admin session. Please check Super Admin password or re-login.";
       } else if (error.message) {
         message = error.message;
       }
@@ -141,6 +194,16 @@ export function AddAdminForm() {
         description: message,
         variant: "destructive",
       });
+       // Attempt to restore superadmin session if it was lost during the process.
+      if (!auth.currentUser || auth.currentUser.email !== originalSuperAdminEmail) {
+        try {
+            if(auth.currentUser) await firebaseSignOut(auth);
+            await signInWithEmailAndPassword(auth, originalSuperAdminEmail, values.superAdminPassword);
+        } catch (sessionRestoreError) {
+            console.error("Failed to restore superadmin session after error:", sessionRestoreError);
+            setErrorMessage(message + " Additionally, failed to restore Super Admin session. Please re-login.");
+        }
+      }
     } finally {
       setIsLoading(false);
     }
@@ -150,11 +213,11 @@ export function AddAdminForm() {
     <Card className="w-full max-w-2xl mx-auto shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-2xl">
       <CardHeader>
         <CardTitle className="text-3xl font-bold text-primary">Create New Administrator</CardTitle>
-        <CardDescription className="text-lg text-muted-foreground">Complete the form below to add a new admin user.</CardDescription>
+        <CardDescription className="text-lg text-muted-foreground">Complete the form to add an admin. This will create their login and profile.</CardDescription>
       </CardHeader>
-      <CardContent className="pt-6"> {/* Added pt-6 for better spacing after header */}
+      <CardContent className="pt-6">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8"> {/* Increased space-y for more breathing room */}
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
@@ -174,7 +237,7 @@ export function AddAdminForm() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email Address</FormLabel>
+                    <FormLabel>Admin's Email Address (for login)</FormLabel>
                     <FormControl>
                       <Input type="email" placeholder="admin@example.com" {...field} />
                     </FormControl>
@@ -187,7 +250,7 @@ export function AddAdminForm() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Set Password</FormLabel>
+                    <FormLabel>Set Admin's Password</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input type={showPassword ? "text" : "password"} placeholder="Create a strong password" {...field} />
@@ -334,8 +397,8 @@ export function AddAdminForm() {
               <p className="text-sm font-medium text-destructive p-3 bg-destructive/10 rounded-md">{errorMessage}</p>
             )}
 
-            <Button type="submit" className="w-full text-lg py-6" disabled={isLoading}> {/* Larger button */}
-              {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+            <Button type="submit" className="w-full text-lg py-6" disabled={isLoading || authLoading}>
+              {(isLoading || authLoading) ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
               Create Admin Account
             </Button>
           </form>
@@ -344,3 +407,5 @@ export function AddAdminForm() {
     </Card>
   );
 }
+
+    
