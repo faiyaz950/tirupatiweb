@@ -27,11 +27,12 @@ import {
   deleteUser,
   type UserCredential
 } from "firebase/auth";
-import { auth } from "@/lib/firebase"; // db is imported via addAdminToFirestore
+import { auth } from "@/lib/firebase";
 import { addAdminToFirestore } from "@/lib/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRouter } from 'next/navigation'; // Added useRouter
 
 const companies = [
   { id: "Tirupati Industrial Services", label: "Tirupati Industrial Services" },
@@ -54,11 +55,12 @@ const formSchema = z.object({
 
 export function AddAdminForm() {
   const { toast } = useToast();
-  const { user: superAdminUser, loading: authLoading } = useAuth(); // This is the currently logged-in super admin
+  const { user: superAdminUser, loading: authLoading } = useAuth(); 
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showSuperAdminPassword, setShowSuperAdminPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const router = useRouter(); // Initialized router
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -110,8 +112,7 @@ export function AddAdminForm() {
         } else if (authError.code === 'auth/weak-password') {
           specificErrorMessage = "The password is too weak. Please use a stronger password.";
         }
-        // If createUser fails, SuperAdmin is still logged in. We need to restore their session
-        // only if the current user is NOT the super admin (which shouldn't happen here, but defensive check)
+        
         if (auth.currentUser?.email !== originalSuperAdminEmail) {
           if(auth.currentUser) await firebaseSignOut(auth);
           await signInWithEmailAndPassword(auth, originalSuperAdminEmail, values.superAdminPassword);
@@ -124,8 +125,6 @@ export function AddAdminForm() {
 
       const newAdminAuthUser = newAdminUserCredential.user;
       if (!newAdminAuthUser) {
-        // This case implies createUser resolved but user object is null. Highly unlikely.
-        // Restore SuperAdmin session as a precaution.
         if(auth.currentUser) await firebaseSignOut(auth); 
         await signInWithEmailAndPassword(auth, originalSuperAdminEmail, values.superAdminPassword);
         setErrorMessage("Admin Auth user creation returned no user. Please try again.");
@@ -133,8 +132,6 @@ export function AddAdminForm() {
         setIsLoading(false);
         return;
       }
-
-      // At this point, newAdminAuthUser is the auth.currentUser
 
       // 3. Save admin details to Firestore
       try {
@@ -153,7 +150,6 @@ export function AddAdminForm() {
         setErrorMessage(`Admin Auth user created (UID: ${newAdminAuthUser.uid}) but profile save to Firestore failed: ${firestoreError.message}. Attempting to delete Auth user.`);
         toast({ title: "Firestore Save Failed", description: `Profile not saved. Attempting Auth rollback. Error: ${firestoreError.message}`, variant: "destructive", duration: 7000 });
         
-        // Attempt to roll back Auth user creation. newAdminAuthUser is current user.
         try {
           await deleteUser(newAdminAuthUser); 
           toast({ title: "Auth Rollback Successful", description: `Admin Auth user ${values.email} deleted.`});
@@ -162,7 +158,6 @@ export function AddAdminForm() {
           toast({ title: "Critical Error", description: `Firestore save failed and Auth user rollback failed. Manual cleanup needed for ${values.email}. Error: ${deleteError.message}`, variant: "destructive", duration: 10000 });
         }
         
-        // Regardless of rollback success/failure, ensure SuperAdmin session is restored.
         if(auth.currentUser) await firebaseSignOut(auth); 
         await signInWithEmailAndPassword(auth, originalSuperAdminEmail, values.superAdminPassword);
         
@@ -171,8 +166,6 @@ export function AddAdminForm() {
       }
 
       // 4. Successfully created Auth user and Firestore profile.
-      // Sign out the new admin (who is currently auth.currentUser)
-      // and sign back in the SuperAdmin.
       await firebaseSignOut(auth); 
       await signInWithEmailAndPassword(auth, originalSuperAdminEmail, values.superAdminPassword); 
 
@@ -181,16 +174,19 @@ export function AddAdminForm() {
         description: `${values.name} has been successfully added as an admin.`,
       });
       form.reset();
+      router.push('/dashboard'); // Redirect to dashboard
 
     } catch (error: any) { 
       console.error("Overall error in admin creation process:", error);
       let message = "An unexpected error occurred during the admin creation process.";
 
-      // This outer catch handles errors from SuperAdmin re-auth or the final SuperAdmin sign-in attempt.
-      if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
         message = "Super Admin password verification failed. Please ensure your password is correct.";
+      } else if (error.code === 'auth/user-not-found' && error.message.includes("new admin")) { 
+        // This might indicate an issue during the complex sign-out/sign-in flow if not handled perfectly
+        message = "Error managing admin sessions. Please try again or check Firebase console.";
       } else if (error.message) {
-        message = error.message; // Fallback to Firebase's message if code isn't specific enough
+        message = error.message;
       }
       
       setErrorMessage(message);
@@ -200,10 +196,9 @@ export function AddAdminForm() {
         variant: "destructive",
       });
       
-      // Attempt to restore superadmin session if it was lost during the process or was the new admin.
       if (auth.currentUser?.email !== originalSuperAdminEmail) {
         try {
-            if(auth.currentUser) await firebaseSignOut(auth); // Sign out whomever is current
+            if(auth.currentUser) await firebaseSignOut(auth); 
             await signInWithEmailAndPassword(auth, originalSuperAdminEmail, values.superAdminPassword);
         } catch (sessionRestoreError: any) {
             const restoreMsg = "Failed to restore Super Admin session after an error. Please re-login manually.";
@@ -415,3 +410,4 @@ export function AddAdminForm() {
     </Card>
   );
 }
+
