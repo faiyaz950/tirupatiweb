@@ -25,13 +25,13 @@ import {
   EmailAuthProvider, 
   reauthenticateWithCredential,
   deleteUser,
-  type User as FirebaseUser, // Renamed to avoid conflict with Admin type if any
+  type User as FirebaseUser,
   type UserCredential
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { addAdminToFirestore } from "@/lib/firestore";
 import { useAuth } from "@/hooks/useAuth";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from 'next/navigation';
 
@@ -80,51 +80,60 @@ export function AddAdminForm() {
     },
   });
 
+  // Store original super admin details at the component level
+  const [originalSuperAdminEmail, setOriginalSuperAdminEmail] = useState<string | null>(null);
+  const [originalSuperAdminUID, setOriginalSuperAdminUID] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (superAdminUserHook) {
+      setOriginalSuperAdminEmail(superAdminUserHook.email);
+      setOriginalSuperAdminUID(superAdminUserHook.uid);
+    }
+  }, [superAdminUserHook]);
+
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (authLoading) {
       setErrorMessage("Authentication is still loading. Please wait and try again.");
       toast({ title: "Authentication Busy", description: "Please wait a moment.", variant: "default" });
       return;
     }
-    if (!superAdminUserHook || !superAdminUserHook.email || !superAdminUserHook.uid) {
-      setErrorMessage("Super Admin not authenticated or vital details missing. Please re-login.");
-      toast({ title: "Authentication Error", description: "Super Admin session invalid.", variant: "destructive" });
-      return;
+    
+    if (!originalSuperAdminEmail || !originalSuperAdminUID) {
+        setErrorMessage("Super Admin details not available. Please re-login.");
+        toast({ title: "Authentication Error", description: "Super Admin session details missing. Please re-login.", variant: "destructive" });
+        setIsLoading(false);
+        return;
+    }
+    
+    // Ensure auth.currentUser is the super admin we expect before proceeding
+    if (!auth.currentUser || auth.currentUser.uid !== originalSuperAdminUID) {
+        setErrorMessage("Super Admin session mismatch or not found. Please re-login.");
+        toast({ title: "Session Error", description: "Super Admin session is invalid. Please re-login.", variant: "destructive" });
+        // Try to sign out any unexpected user and redirect.
+        if(auth.currentUser) await firebaseSignOut(auth);
+        router.push('/?error=sessionMismatchOnSubmit');
+        setIsLoading(false);
+        return;
     }
 
     setIsLoading(true);
     setErrorMessage(null);
-
-    const saEmail = superAdminUserHook.email;
-    const saUID = superAdminUserHook.uid;
     
     let createdNewAdminAuthUser: FirebaseUser | null = null;
 
     try {
-      // Step 1: Re-authenticate Super Admin to verify their identity and refresh session.
-      // This ensures the current user is indeed the Super Admin before sensitive operations.
-      if (auth.currentUser?.uid !== saUID) {
-        // This indicates a session mismatch. The user from useAuth() is not the current Firebase auth.currentUser.
-        // This could happen if auth state changed unexpectedly elsewhere.
-        setErrorMessage("Critical session mismatch. Expected Super Admin is not the currently authenticated user. Please re-login.");
-        toast({ title: "Session Error", description: "Super Admin session mismatch. Please re-login.", variant: "destructive" });
-        setIsLoading(false);
-        // Optionally, attempt to sign out current user and redirect to login
-        if(auth.currentUser) await firebaseSignOut(auth);
-        router.push('/?error=sessionMismatch');
-        return;
-      }
-      const credential = EmailAuthProvider.credential(saEmail, values.superAdminPassword);
+      // Step 1: Re-authenticate Super Admin
+      const credential = EmailAuthProvider.credential(originalSuperAdminEmail, values.superAdminPassword);
       await reauthenticateWithCredential(auth.currentUser!, credential);
-      // Super Admin is now re-authenticated. auth.currentUser is still Super Admin.
+      // Super Admin is re-authenticated. auth.currentUser is still Super Admin.
 
-      // Step 2: Create new admin user in Firebase Auth.
+      // Step 2: Create new admin user in Firebase Auth
       // This will temporarily make the new admin the auth.currentUser.
       const newAdminUserCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      createdNewAdminAuthUser = newAdminUserCredential.user; // auth.currentUser is NOW the new admin
+      createdNewAdminAuthUser = newAdminUserCredential.user; 
 
       if (!createdNewAdminAuthUser) {
-        // This should ideally not happen if createUserWithEmailAndPassword resolves without error.
         throw new Error("Admin Auth user creation succeeded but returned no user object. This is unexpected.");
       }
 
@@ -146,14 +155,15 @@ export function AddAdminForm() {
       // Sign out the newly created admin (who is current auth.currentUser).
       await firebaseSignOut(auth); // auth.currentUser is now null.
       // Sign Super Admin back in using their original email and the provided password.
-      await signInWithEmailAndPassword(auth, saEmail, values.superAdminPassword); 
+      // This ensures the SuperAdmin is the active user before navigating or further actions.
+      await signInWithEmailAndPassword(auth, originalSuperAdminEmail, values.superAdminPassword); 
       // auth.currentUser should now be the Super Admin again.
 
       toast({
         title: "Admin Account Created",
         description: `${values.name} has been successfully added as an admin.`,
       });
-      form.reset(); // Clear the form
+      form.reset(); 
       router.push('/dashboard'); // Redirect to dashboard
 
     } catch (error: any) { 
@@ -162,7 +172,13 @@ export function AddAdminForm() {
 
       if (error.code) { // Firebase error
         switch (error.code) {
-          case 'auth/invalid-credential': // Can occur during re-auth or final super admin sign-in
+          case 'auth/invalid-credential': 
+             if (createdNewAdminAuthUser) { // Error during SA re-login attempt *after* admin creation
+                displayedMessage = "Failed to restore Super Admin session after admin creation. New admin might be active. Please check and re-login as Super Admin.";
+             } else { // Error during initial SA re-authentication
+                displayedMessage = "Super Admin password verification failed. Please ensure your password is correct.";
+             }
+            break;
           case 'auth/wrong-password':
             displayedMessage = "Super Admin password verification failed. Please ensure your password is correct.";
             break;
@@ -173,11 +189,13 @@ export function AddAdminForm() {
             displayedMessage = "The password provided for the new admin is too weak.";
             break;
           case 'auth/user-not-found':
-             displayedMessage = `Super Admin account (${saEmail}) not found during session restoration. Please contact support.`;
+             displayedMessage = `Super Admin account (${originalSuperAdminEmail}) not found during session restoration. Please contact support.`;
              break;
           default:
             displayedMessage = `Firebase Error: ${error.message} (Code: ${error.code})`;
         }
+      } else if (error.message.includes("Admin Auth user creation succeeded but returned no user object")) {
+        displayedMessage = "Critical error after creating admin Auth user (no user object).";
       } else if (error.message) {
         displayedMessage = error.message;
       }
@@ -186,50 +204,42 @@ export function AddAdminForm() {
       toast({ title: "Operation Failed", description: displayedMessage, variant: "destructive", duration: 7000 });
       
       // **Rollback Attempt**
-      // If a new admin Auth user was created but a subsequent step failed (e.g., Firestore save, Super Admin re-login).
       if (createdNewAdminAuthUser) {
         toast({ title: "Attempting Rollback", description: "Trying to clean up newly created admin's Auth account.", variant: "default", duration: 5000});
         try {
-          // To delete the new admin (createdNewAdminAuthUser), the Super Admin must be signed in.
-          // Or, the new admin must delete themselves if they are the current user.
-          
-          // Check current auth state.
-          const currentAuthUser = auth.currentUser;
-
-          if (currentAuthUser && currentAuthUser.uid === createdNewAdminAuthUser.uid) {
-            // The new admin is still the current user; they can delete themselves.
+          // To delete the new admin, they must be the current user OR Super Admin must re-login and do it (not possible with client SDK directly)
+          // Or, use an Admin SDK via a function.
+          // Current logic: If new admin is currentUser, they can delete themselves.
+          if (auth.currentUser && auth.currentUser.uid === createdNewAdminAuthUser.uid) {
             await deleteUser(createdNewAdminAuthUser);
             toast({ title: "Auth Rollback Successful", description: `Admin Auth user ${values.email} deleted.`});
-            createdNewAdminAuthUser = null; // Indicate rollback happened
+            createdNewAdminAuthUser = null; 
           } else {
-            // Super Admin needs to be signed in to delete another user, which isn't directly possible with client SDK.
-            // Or, if Super Admin is already signed in (e.g. error happened AFTER super admin sign-in attempt)
-            // This client-side rollback is limited. The most reliable way is Firebase Functions.
-            // For now, we log that manual cleanup might be needed if the new admin wasn't current user.
-            console.warn(`Rollback limitation: New admin Auth user (${values.email}) was created, but they were not the current user during error. Manual cleanup might be needed.`);
-            toast({ title: "Rollback Incomplete", description: `Auth user ${values.email} might need manual deletion if not current.`, variant: "destructive", duration: 10000 });
+            // If new admin is NOT current user (e.g., error occurred after SA re-login attempt started but failed)
+            // We need to sign SA out, sign NA in, delete NA, sign SA back in. This is very complex client-side.
+            // For now, we'll log and inform the user if immediate rollback isn't straightforward.
+            console.warn(`Rollback challenge: New admin Auth user (${values.email}) was created, but couldn't be automatically deleted as they weren't current user or SA session issue. Manual cleanup might be needed.`);
+            toast({ title: "Rollback Requires Attention", description: `Auth user ${values.email} was created. If issue persists, manual Auth cleanup may be needed.`, variant: "destructive", duration: 10000 });
           }
         } catch (deleteError: any) {
-          setErrorMessage(prev => `${prev}. Auth Rollback Failed: ${deleteError.message}. Please manually delete Auth user: ${values.email}.`);
+          setErrorMessage(prev => `${prev ? prev + '. ' : ''}Auth Rollback Failed: ${deleteError.message}. Please manually delete Auth user: ${values.email}.`);
           toast({ title: "Critical: Auth Rollback Failed", description: `Could not delete new admin Auth user ${values.email}. Error: ${deleteError.message}`, variant: "destructive", duration: 10000 });
         }
       }
       
-      // **Final Session Restoration Attempt for Super Admin**
-      // Regardless of rollback success/failure, try to ensure Super Admin is logged in.
+      // **Final Session Restoration Attempt for Super Admin in catch block**
+      // Try to ensure Super Admin is logged in, especially if an error occurred after new admin creation.
       try {
-        if (auth.currentUser?.uid !== saUID) {
-          if(auth.currentUser) await firebaseSignOut(auth); // Sign out any unexpected user
-          await signInWithEmailAndPassword(auth, saEmail, values.superAdminPassword);
-          // console.log("Super Admin session restored in catch block.");
+        if (!auth.currentUser || auth.currentUser.uid !== originalSuperAdminUID) {
+          if(auth.currentUser) await firebaseSignOut(auth); 
+          await signInWithEmailAndPassword(auth, originalSuperAdminEmail, values.superAdminPassword);
         }
       } catch (sessionRestoreError: any) {
         const restoreMsg = "CRITICAL: Failed to restore Super Admin session after an error. Please re-login manually.";
         console.error(restoreMsg, sessionRestoreError);
-        setErrorMessage(prev => `${prev}. ${restoreMsg}`);
+        setErrorMessage(prev => `${prev ? prev + '. ' : ''}${restoreMsg}`);
         toast({ title: "Critical Session Error", description: restoreMsg, variant: "destructive", duration: 10000});
-        // Consider redirecting to login page if SA session cannot be restored
-        router.push('/?error=superAdminSessionRestoreFailed');
+        if (router) router.push('/?error=superAdminSessionRestoreFailedInCatch');
       }
     } finally {
       setIsLoading(false);
@@ -434,3 +444,4 @@ export function AddAdminForm() {
     </Card>
   );
 }
+
