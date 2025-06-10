@@ -23,10 +23,23 @@ function PageLoading() {
   );
 }
 
-export default function HomePage() {
+// Correct interface for Next.js 15+
+interface PageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+// Component to handle the async searchParams
+async function LoginFormWrapper({ searchParams }: PageProps) {
+  // Await the searchParams promise
+  const params = await searchParams;
+  
+  return <LoginForm searchParams={params} />;
+}
+
+export default function HomePage({ searchParams }: PageProps) {
   return (
     <Suspense fallback={<PageLoading />}>
-      <LoginForm />
+      <LoginFormWrapper searchParams={searchParams} />
     </Suspense>
   );
 }
