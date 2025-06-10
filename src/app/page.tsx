@@ -1,5 +1,4 @@
 "use client";
-
 import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/LoginForm";
 
@@ -24,15 +23,23 @@ function PageLoading() {
   );
 }
 
-// Use searchParams prop instead of useSearchParams hook
+// Updated interface to match Next.js 15+ expectations
 interface PageProps {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+// Component to handle the async searchParams
+async function LoginFormWrapper({ searchParams }: PageProps) {
+  // Await the searchParams promise
+  const params = await searchParams;
+  
+  return <LoginForm searchParams={params} />;
 }
 
 export default function HomePage({ searchParams }: PageProps) {
   return (
     <Suspense fallback={<PageLoading />}>
-      <LoginForm searchParams={searchParams} />
+      <LoginFormWrapper searchParams={searchParams} />
     </Suspense>
   );
 }
