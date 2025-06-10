@@ -316,11 +316,11 @@ allow update: if isAdmin() &&
                        request.resource.data.bank_info.ifsc_code.matches('^[A-Z]{4}0[A-Z0-9]{6}$') &&
                        request.resource.data.bank_info.branch_name is string;
 
-      allow delete: if false;
+      allow delete: if true;
     }
 
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if true;
     }
   }
 }
