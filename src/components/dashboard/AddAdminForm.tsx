@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -271,14 +270,13 @@ export function AddAdminForm() {
         console.error("AddAdminForm: " + restoreMsg, sessionRestoreError);
         setErrorMessage(prev => `${prev ? prev + '. ' : ''}${restoreMsg}`);
         toast({ title: "Critical Session Error", description: restoreMsg, variant: "destructive", duration: 10000});
-        if (router && pathname !== '/') router.push('/?error=superAdminSessionRestoreFailedInCatch');
+        router.push('/?error=superAdminSessionRestoreFailedInCatch');
       }
     } finally {
       setIsLoading(false);
       console.log("AddAdminForm: Admin creation process finished (finally block).");
     }
   }
-  const pathname = useRouter(); // To avoid error with router.push in catch if router is null.
 
   return (
     <Card className="w-full max-w-2xl mx-auto shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-2xl">
@@ -478,4 +476,3 @@ export function AddAdminForm() {
     </Card>
   );
 }
-
