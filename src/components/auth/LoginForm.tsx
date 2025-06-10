@@ -27,23 +27,23 @@ const formSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
 });
 
-export function LoginForm() {
+interface LoginFormProps {
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
+
+export function LoginForm({ searchParams }: LoginFormProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Check for URL parameters after component mounts (client-side only)
+  // Check for error in searchParams
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const urlParams = new URLSearchParams(window.location.search);
-      const error = urlParams.get("error");
-      if (error === "authFailed") {
-        setErrorMessage("Access denied. Only SuperAdmin can log in.");
-      }
+    if (searchParams?.error === "authFailed") {
+      setErrorMessage("Access denied. Only SuperAdmin can log in.");
     }
-  }, []);
+  }, [searchParams]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
