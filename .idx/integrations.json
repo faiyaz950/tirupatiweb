@@ -1,3 +1,5 @@
 {
-  "firebase_hosting": {}
+  "firebase_hosting": {
+    "deploymentHostingUrl": "https://tirupati-group-20da9.web.app"
+  }
 }

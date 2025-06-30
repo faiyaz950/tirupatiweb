@@ -11,7 +11,8 @@ import Link from 'next/link';
 import { 
     ArrowLeft, Loader2, AlertTriangle, User, Briefcase, Banknote, 
     CheckCircle, XCircle, HelpCircle, BookUser, Hash, SmartphoneNfc, 
-    ScanFace, CalendarDays, Cake, MapPin, CreditCard, Mail, Phone, Home, UserSquare, Landmark, Edit3, CalendarCheck2, UserCircle as UserCircleIcon, Users as UsersIcon
+    ScanFace, CalendarDays, Cake, MapPin, CreditCard, Mail, Phone, Home, UserSquare, Landmark, Edit3, CalendarCheck2, UserCircle as UserCircleIcon, Users as UsersIcon,
+    FileImage
 } from 'lucide-react'; 
 import { format, parseISO, isValid } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
@@ -127,6 +128,43 @@ export default function KycDetailPage() {
       toast({ title: "Update Failed", description: err.message, variant: "destructive" });
     }
   });
+
+  const DocumentItem = ({ title, documentUrl, hint }: { title: string; documentUrl: string | null | undefined; hint: string }) => {
+    if (!documentUrl || documentUrl.trim() === '') {
+      return (
+        <Card className="flex flex-col">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-medium">{title}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex-grow flex items-center justify-center h-40 sm:h-48 bg-muted/50 rounded-b-md">
+            <p className="text-sm text-muted-foreground">Not Provided</p>
+          </CardContent>
+        </Card>
+      );
+    }
+  
+    return (
+      <Card className="flex flex-col group">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-medium">{title}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-2 flex-grow">
+          <a href={documentUrl} target="_blank" rel="noopener noreferrer" className="block relative aspect-video bg-muted/30 rounded-md overflow-hidden">
+            <Image
+              src={documentUrl}
+              alt={title}
+              fill
+              className="object-contain p-1"
+              data-ai-hint={hint}
+            />
+             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <p className="text-white font-semibold text-sm">View Full Size</p>
+            </div>
+          </a>
+        </CardContent>
+      </Card>
+    );
+  };
 
   const handleExportSingleKyc = () => {
     if (!kyc) {
@@ -329,6 +367,22 @@ export default function KycDetailPage() {
             <InfoItem label="Bank Name" value={bankInfo.bank_name} icon={Landmark} />
             <InfoItem label="Branch Name" value={bankInfo.branch_name} icon={Home} />
             <InfoItem label="IFSC Code" value={bankInfo.ifsc_code} icon={Hash} />
+          </div>
+
+          <Separator className="my-6" />
+          <SectionTitle title="Documents" icon={FileImage} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {kyc.documents && kyc.documents.length > 0 ? (
+              <>
+                <DocumentItem title="Aadhar Card" documentUrl={kyc.documents[0]} hint="document id" />
+                <DocumentItem title="PAN Card" documentUrl={kyc.documents[1]} hint="document id" />
+                <DocumentItem title="Applicant Photo" documentUrl={kyc.documents[2]} hint="portrait face" />
+              </>
+            ) : (
+              <div className="col-span-full bg-muted/50 p-6 rounded-lg text-center">
+                <p className="text-muted-foreground">No documents were uploaded for this KYC record.</p>
+              </div>
+            )}
           </div>
 
           <Separator className="my-6" />
