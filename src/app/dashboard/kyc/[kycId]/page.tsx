@@ -373,11 +373,14 @@ export default function KycDetailPage() {
           <SectionTitle title="Documents" icon={FileImage} />
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {kyc.documents && kyc.documents.length > 0 ? (
-              <>
-                <DocumentItem title="Aadhar Card" documentUrl={kyc.documents[0]} hint="document id" />
-                <DocumentItem title="PAN Card" documentUrl={kyc.documents[1]} hint="document id" />
-                <DocumentItem title="Applicant Photo" documentUrl={kyc.documents[2]} hint="portrait face" />
-              </>
+              kyc.documents.map((docUrl, index) => (
+                <DocumentItem
+                  key={index}
+                  title={`Document ${index + 1}`}
+                  documentUrl={docUrl}
+                  hint="document"
+                />
+              ))
             ) : (
               <div className="col-span-full bg-muted/50 p-6 rounded-lg text-center">
                 <p className="text-muted-foreground">No documents were uploaded for this KYC record.</p>
