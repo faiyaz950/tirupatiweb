@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getKycById, updateKycRecord, db } from '@/lib/firestore';
+import { getKycById, updateKycRecord } from '@/lib/firestore';
 import type { KYC, KycPersonalInfo, KycProfessionalInfo, KycBankInfo } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,8 @@ import Link from 'next/link';
 import { 
     ArrowLeft, Loader2, AlertTriangle, User, Briefcase, Banknote, 
     CheckCircle, XCircle, HelpCircle, BookUser, Hash, SmartphoneNfc, 
-    ScanFace, CalendarDays, Cake, MapPin, CreditCard, Mail, Phone, Home, UserSquare, Landmark, Edit3, CalendarCheck2, UserCircle as UserCircleIcon, Users as UsersIcon
+    ScanFace, CalendarDays, Cake, MapPin, CreditCard, Mail, Phone, Home, UserSquare, Landmark, Edit3, CalendarCheck2, UserCircle as UserCircleIcon, Users as UsersIcon,
+    FileImage
 } from 'lucide-react'; 
 import { format, parseISO, isValid } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
@@ -19,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import * as XLSX from 'xlsx';
-import { collection, getDocs, type Timestamp } from 'firebase/firestore';
+import type { Timestamp } from 'firebase/firestore';
 
 const SectionTitle = ({ title, icon: Icon }: { title: string; icon: React.ElementType }) => (
   <div className="flex items-center space-x-2 mb-3 mt-4">
@@ -52,17 +53,14 @@ const InfoItem = ({ label, value, capitalize = false, icon: Icon, isDate = false
     }
     displayValue = formattedDate || value; // Show formatted date or original string if formatting failed
   } else if (typeof value === 'boolean') {
-  displayValue = value ? 'Yes' : 'No';
-} else if (
-  value !== null &&
-  value !== undefined &&
-  (typeof value === 'number' ? value === 0 || Boolean(value) : Boolean(value))
-) {
-  displayValue = capitalize
-    ? String(value).charAt(0).toUpperCase() + String(value).slice(1)
-    : String(value);
-}
+    displayValue = value ? 'Yes' : 'No';
+  } else if (value || value === 0) { // Handles numbers including 0
+    displayValue = capitalize ? (String(value).charAt(0).toUpperCase() + String(value).slice(1)) : String(value);
+  }
 
+  if (displayValue === "") { // Ensure empty string from DB becomes N/A
+    displayValue = 'N/A';
+  }
 
   return (
     <div className="grid grid-cols-3 gap-2 py-1.5 items-start">
@@ -130,6 +128,43 @@ export default function KycDetailPage() {
       toast({ title: "Update Failed", description: err.message, variant: "destructive" });
     }
   });
+
+  const DocumentItem = ({ title, documentUrl, hint }: { title: string; documentUrl: string | null | undefined; hint: string }) => {
+    if (!documentUrl || documentUrl.trim() === '') {
+      return (
+        <Card className="flex flex-col">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-medium">{title}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex-grow flex items-center justify-center h-40 sm:h-48 bg-muted/50 rounded-b-md">
+            <p className="text-sm text-muted-foreground">Not Provided</p>
+          </CardContent>
+        </Card>
+      );
+    }
+  
+    return (
+      <Card className="flex flex-col group">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-medium">{title}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-2 flex-grow">
+          <a href={documentUrl} target="_blank" rel="noopener noreferrer" className="block relative aspect-video bg-muted/30 rounded-md overflow-hidden">
+            <Image
+              src={documentUrl}
+              alt={title}
+              fill
+              className="object-contain p-1"
+              data-ai-hint={hint}
+            />
+             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <p className="text-white font-semibold text-sm">View Full Size</p>
+            </div>
+          </a>
+        </CardContent>
+      </Card>
+    );
+  };
 
   const handleExportSingleKyc = () => {
     if (!kyc) {
@@ -335,6 +370,25 @@ export default function KycDetailPage() {
           </div>
 
           <Separator className="my-6" />
+          <SectionTitle title="Documents" icon={FileImage} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {kyc.documents && kyc.documents.length > 0 ? (
+              kyc.documents.map((docUrl, index) => (
+                <DocumentItem
+                  key={index}
+                  title={`Document ${index + 1}`}
+                  documentUrl={docUrl}
+                  hint="document"
+                />
+              ))
+            ) : (
+              <div className="col-span-full bg-muted/50 p-6 rounded-lg text-center">
+                <p className="text-muted-foreground">No documents were uploaded for this KYC record.</p>
+              </div>
+            )}
+          </div>
+
+          <Separator className="my-6" />
           <SectionTitle title="KYC Information & Status" icon={getStatusIcon()} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
             <InfoItem label="Current Status" value={kyc.status} capitalize icon={getStatusIcon()} />
@@ -382,3 +436,5 @@ export default function KycDetailPage() {
     </div>
   );
 }
+
+    
