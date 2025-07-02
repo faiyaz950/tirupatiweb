@@ -29,7 +29,13 @@ const SectionTitle = ({ title, icon: Icon }: { title: string; icon: React.Elemen
   </div>
 );
 
-const InfoItem = ({ label, value, capitalize = false, icon: Icon, isDate = false }: { label: string; value?: string | null | boolean | Date; capitalize?: boolean; icon?: React.ElementType, isDate?: boolean }) => {
+const InfoItem = ({ label, value, capitalize = false, icon: Icon, isDate = false }: { 
+  label: string; 
+  value?: string | null | boolean | Date | number; // Add number to the type
+  capitalize?: boolean; 
+  icon?: React.ElementType; 
+  isDate?: boolean 
+}) => {
   let displayValue: string | React.ReactNode = 'N/A';
 
   if (value instanceof Date) {
@@ -54,12 +60,9 @@ const InfoItem = ({ label, value, capitalize = false, icon: Icon, isDate = false
     displayValue = formattedDate || value; // Show formatted date or original string if formatting failed
   } else if (typeof value === 'boolean') {
     displayValue = value ? 'Yes' : 'No';
-  } else if (value || value === 0) { // Handles numbers including 0
+  } else if (value !== null && value !== undefined && value !== '') {
+    // Handle both string and number values properly
     displayValue = capitalize ? (String(value).charAt(0).toUpperCase() + String(value).slice(1)) : String(value);
-  }
-
-  if (displayValue === "") { // Ensure empty string from DB becomes N/A
-    displayValue = 'N/A';
   }
 
   return (
