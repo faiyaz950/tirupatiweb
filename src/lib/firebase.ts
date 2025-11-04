@@ -13,7 +13,7 @@ import { getStorage, connectStorageEmulator } from "firebase/storage";
 // NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="your_messaging_sender_id"
 // NEXT_PUBLIC_FIREBASE_APP_ID="your_app_id"
 // NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID="your_measurement_id"
-// NEXT_PUBLIC_SUPER_ADMIN_EMAIL="superadmin@tiru.com"
+// NEXT_PUBLIC_SUPER_ADMIN_EMAIL="tispl.operations@gmail.com"
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDhGX85bx0OeFAAcIn64RRaVoP8xMPWZgo",
@@ -50,6 +50,6 @@ if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
   // connectStorageEmulator(storage, "localhost", 9199); // Uncomment if using storage emulator
 }
 
-export const SUPER_ADMIN_EMAIL = process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || 'superadmin@tiru.com';
+export const SUPER_ADMIN_EMAIL = process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || 'tispl.operations@gmail.com';
 
 export { app, auth, db };
