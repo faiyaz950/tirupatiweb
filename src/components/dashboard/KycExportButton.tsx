@@ -61,7 +61,16 @@ export function KycExportButton({ kycData, isLoading: isFetchingData }: KycExpor
     setIsExporting(true);
 
     try {
-      const dataToExport = kycData.map(kyc => {
+      // Sort data: newest to oldest based on created_at
+      const sortedKycData = [...kycData].sort((a, b) => {
+        const dateA = new Date(a.created_at as string | Date);
+        const dateB = new Date(b.created_at as string | Date);
+        // getTime() returns milliseconds, so a larger number is a more recent date
+        return dateB.getTime() - dateA.getTime();
+      });
+
+
+      const dataToExport = sortedKycData.map(kyc => {
         const pInfo = kyc.personal_info || {};
         const profInfo = kyc.professional_info || {};
         const bankInfo = kyc.bank_info || {};
