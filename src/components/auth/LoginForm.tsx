@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Loader2, LockKeyhole } from "lucide-react";
+import { Eye, EyeOff, Loader2, LockKeyhole, Smartphone, Download } from "lucide-react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, SUPER_ADMIN_EMAIL } from "@/lib/firebase";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -36,6 +36,8 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const apkDownloadLink = "https://drive.google.com/file/d/1VW0l2e14jQZEJ8juVHewUVp8Cp37QzO5/view?usp=sharing";
 
 
   useEffect(() => {
@@ -90,14 +92,14 @@ export function LoginForm() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-secondary">
       <WaveHeader 
         title="Welcome Back"
         subtitle="Sign in to manage your platform"
         icon={<LockKeyhole size={48} className="text-white"/>}
       />
-      <main className="flex-grow flex items-center justify-center p-4 -mt-16 sm:-mt-20 md:-mt-24 relative z-10">
-        <Card className="w-full max-w-md shadow-2xl">
+      <main className="flex-grow flex flex-col items-center justify-center p-4 -mt-16 sm:-mt-20 md:-mt-24 relative z-10">
+        <Card className="w-full max-w-md shadow-2xl mb-8">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center text-primary">Super Admin Login</CardTitle>
             <CardDescription className="text-center">Enter your credentials to access the dashboard.</CardDescription>
@@ -164,6 +166,30 @@ export function LoginForm() {
             </Form>
           </CardContent>
         </Card>
+
+        {/* Download App Card Section */}
+         <Card className="w-full max-w-md shadow-xl overflow-hidden bg-gradient-to-br from-primary/80 to-accent/80 text-primary-foreground">
+            <CardHeader className="pb-3">
+              <div className="flex items-center space-x-3">
+                <Smartphone size={32} />
+                <CardTitle className="text-2xl font-bold">Get Our Android App</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <CardDescription className="text-primary-foreground/90 mb-4">
+                Download the official Android application for team members to manage tasks on the go.
+              </CardDescription>
+              <a
+                href={apkDownloadLink}
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full sm:w-auto text-primary bg-primary-foreground hover:bg-primary-foreground/90"
+              >
+                <Download className="mr-2 h-5 w-5" />
+                Download APK
+              </a>
+            </CardContent>
+          </Card>
       </main>
     </div>
   );

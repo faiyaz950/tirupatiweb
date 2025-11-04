@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { UserPlus, Users, FileText, UserCircle, LogOut, Loader2, AlertTriangle, Gauge, Settings, Download, Smartphone } from "lucide-react";
+import { UserPlus, Users, FileText, UserCircle, LogOut, Loader2, AlertTriangle, Gauge } from "lucide-react";
 import { getSuperAdminProfile, createOrUpdateSuperAdminProfile } from "@/lib/firestore";
 import type { SuperAdminProfile } from "@/types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -55,8 +55,6 @@ export default function SuperAdminDashboardPage() {
   const { user, signOut, superAdminProfile: authSuperAdminProfile } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-
-  const apkDownloadLink = "https://drive.google.com/drive/u/2/folders/1VQbws5qZ4dcd_w8iV973s8YN9gGePE0z";
 
   const { data: superAdminData, isLoading: isLoadingProfile, error: profileError } = useQuery<SuperAdminProfile | null>({
     queryKey: ['superAdminProfile', user?.uid],
@@ -176,48 +174,6 @@ export default function SuperAdminDashboardPage() {
             cta="Sign Out"
             onClick={signOut}
           />
-        </div>
-
-        {/* Download App Card Section */}
-        <div className="mt-12">
-          <Card className="rounded-2xl shadow-xl overflow-hidden bg-gradient-to-br from-primary/80 to-accent/80 text-primary-foreground hover:shadow-2xl transition-all duration-300 ease-in-out hover:-translate-y-1.5">
-            <CardHeader className="pb-3">
-              <div className="flex items-center space-x-3">
-                <Smartphone size={32} />
-                <CardTitle className="text-2xl font-bold">Get Our Android App</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <CardDescription className="text-primary-foreground/90 mb-4">
-                Download the official Android application to manage tasks on the go.
-              </CardDescription>
-              <a
-                href={apkDownloadLink}
-                download="TirupatiGroupApp.apk" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full sm:w-auto text-primary bg-primary-foreground hover:bg-primary-foreground/90 ${apkDownloadLink === "PASTE_YOUR_DIRECT_APK_DOWNLOAD_LINK_HERE" ? 'opacity-50 cursor-not-allowed' : ''}`}
-                onClick={(e) => {
-                  if (apkDownloadLink === "PASTE_YOUR_DIRECT_APK_DOWNLOAD_LINK_HERE") {
-                    e.preventDefault();
-                    toast({
-                      title: "Download Link Not Ready",
-                      description: "The direct download link for the APK needs to be configured first by the admin.",
-                      variant: "destructive"
-                    });
-                  }
-                }}
-              >
-                <Download className="mr-2 h-5 w-5" />
-                Download APK
-              </a>
-              {apkDownloadLink === "PASTE_YOUR_DIRECT_APK_DOWNLOAD_LINK_HERE" && (
-                <p className="text-xs text-primary-foreground/70 mt-2">
-                  (Admin: Please replace the placeholder link above with your actual direct APK download URL.)
-                </p>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </main>
     </div>
