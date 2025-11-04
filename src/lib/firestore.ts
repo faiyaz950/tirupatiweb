@@ -1,11 +1,10 @@
-
 import {
   doc,
   getDoc,
   setDoc,
   addDoc,
   updateDoc,
-  deleteDoc, // Added deleteDoc
+  deleteDoc,
   collection,
   getDocs,
   query,
@@ -16,29 +15,40 @@ import {
   QuerySnapshot,
   DocumentSnapshot,
 } from 'firebase/firestore';
+
 import { db } from './firebase';
 import type { Admin, KYC, SuperAdminProfile } from '@/types';
+
+// Helper function to check if a value is a Firestore Timestamp
+function isTimestamp(value: any): value is Timestamp {
+  return value && typeof value.toDate === 'function';
+}
 
 // Generic function to parse Timestamps
 function parseTimestamps<T extends DocumentData>(data: T): T {
   const newData: Partial<T> = {};
   for (const key in data) {
-    if (data[key] instanceof Timestamp) {
-      newData[key] = data[key].toDate().toISOString() as any;
-    } else if (typeof data[key] === 'object' && data[key] !== null && !Array.isArray(data[key])) {
-      // Check if it's a nested object that might contain Timestamps (like personal_info, etc.)
-      if (key === 'personal_info' || key === 'professional_info' || key === 'bank_info' || key === 'document_info') {
-        newData[key] = parseTimestamps(data[key]) as any; // Recursively parse nested objects
+    const value = data[key];
+    if (isTimestamp(value)) {
+      newData[key] = value.toDate().toISOString() as any;
+    } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      if (
+        key === 'personal_info' ||
+        key === 'professional_info' ||
+        key === 'bank_info' ||
+        key === 'document_info'
+      ) {
+        newData[key] = parseTimestamps(value) as any;
       } else {
-         newData[key] = data[key]; // For other nested objects, keep as is for now unless they also need parsing
+        newData[key] = value;
       }
-    }
-     else {
-      newData[key] = data[key];
+    } else {
+      newData[key] = value;
     }
   }
   return newData as T;
 }
+
 
 
 // SuperAdmin specific functions
@@ -213,3 +223,5 @@ export const updateKycRecord = async (kycId: string, data: Partial<KYC>): Promis
 
     await updateDoc(kycRef, updateData);
 };
+
+export { db };

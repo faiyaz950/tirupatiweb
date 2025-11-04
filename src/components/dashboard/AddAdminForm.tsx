@@ -32,7 +32,7 @@ import { addAdminToFirestore } from "@/lib/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 const companies = [
   { id: "Tirupati Industrial Services", label: "Tirupati Industrial Services" },
@@ -61,6 +61,7 @@ export function AddAdminForm() {
   const [showSuperAdminPassword, setShowSuperAdminPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -278,7 +279,6 @@ export function AddAdminForm() {
       console.log("AddAdminForm: Admin creation process finished (finally block).");
     }
   }
-  const pathname = useRouter(); // To avoid error with router.push in catch if router is null.
 
   return (
     <Card className="w-full max-w-2xl mx-auto shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-2xl">
@@ -478,4 +478,3 @@ export function AddAdminForm() {
     </Card>
   );
 }
-
